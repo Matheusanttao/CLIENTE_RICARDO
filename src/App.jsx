@@ -134,18 +134,23 @@ const HERO_FEATURES = [
 const METHOD = [
   {
     icon: <TargetIcon />,
-    title: 'Avaliação & Objetivo',
+    title: 'Avaliação & Objetivos',
     desc: 'Entendemos seu ponto de partida, limitações e metas reais para traçar o caminho certo.',
   },
   {
     icon: <ClipboardIcon />,
     title: 'Plano com Estratégia',
-    desc: 'Método e organização: estrutura de treino + ajustes pensando no seu dia a dia.',
+    desc: 'Método e organização: estrutura de treino + hábitos pensando no seu dia a dia.',
   },
   {
     icon: <RepeatIcon />,
     title: 'Acompanhamento Contínuo',
-    desc: 'Constância vence intensidade exagerada: a evolução vem com consistência e direção.',
+    desc: 'Constância vence intensidade exagerada: evolução com consistência e direção.',
+  },
+  {
+    icon: <TrendIcon />,
+    title: 'Resultados que Transformam',
+    desc: 'Mais saúde, mais energia e mais confiança para viver o que importa.',
   },
 ]
 
@@ -242,12 +247,21 @@ function App() {
           <div className="topbarInner">
             <a className="brand" href="#inicio" onClick={() => setMobileOpen(false)}>
               <img className="brandLogo" src={logo} alt="Logo Ricardo Personal" />
-              <span className="brandName">Ricardo Personal</span>
+              <span className="brandName">
+                <strong>RICARDO</strong>
+                <span>PERSONAL</span>
+              </span>
             </a>
 
             <nav className="nav" aria-label="Navegação principal">
               {NAV_LINKS.map(([label, href]) => (
-                <a key={href} href={href}>{label}</a>
+                <a
+                  key={href}
+                  href={href}
+                  className={href === '#inicio' ? 'active' : undefined}
+                >
+                  {label}
+                </a>
               ))}
             </nav>
 
@@ -280,7 +294,7 @@ function App() {
                 <div className="pillRow">
                   <span className="pill">
                     <span className="pillDot" aria-hidden="true" />
-                    Fé • Disciplina • Família
+                    Saúde • Disciplina • Evolução
                   </span>
                 </div>
 
@@ -322,10 +336,6 @@ function App() {
 
               <div className="heroVisual" aria-label="Foto do Ricardo">
                 <img className="heroPhoto" src={photo} alt="Ricardo em ambiente de academia" />
-                <div className="badge">
-                  <strong>Ricardo Personal</strong>
-                  <span>Saúde, disciplina e evolução com acompanhamento.</span>
-                </div>
               </div>
             </div>
           </div>
@@ -333,14 +343,9 @@ function App() {
 
         <section className="section section--alt scroll-reveal" id="servicos">
           <div className="container">
-            <div className="sectionHeader sectionHeader--split">
-              <div>
-                <div className="kicker">Serviços</div>
-                <h2 className="h2">O que você recebe</h2>
-              </div>
-              <p className="sectionHeaderAside">
-                Um trabalho baseado em método, organização e acompanhamento — com valores sólidos e responsabilidade.
-              </p>
+            <div className="sectionHeader">
+              <div className="kicker">Serviços</div>
+              <h2 className="h2">O que você recebe</h2>
             </div>
 
             <div className="grid3">
@@ -377,7 +382,7 @@ function App() {
 
         <section className="section section--alt scroll-reveal" id="metodo">
           <div className="container">
-            <div className="splitLayout">
+            <div className="splitLayout methodLayout">
               <div className="splitAside">
                 <div className="kicker">Método</div>
                 <h2 className="h2">Como funciona na prática</h2>
