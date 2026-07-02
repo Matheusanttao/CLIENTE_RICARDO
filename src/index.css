@@ -9,7 +9,7 @@
   --accent-soft: rgba(61, 255, 107, 0.15);
   --radius: 16px;
   --radius-lg: 24px;
-  --container: min(1000px, 100% - 40px);
+  --container: min(1180px, 100% - 40px);
   --space-section: 56px;
   --space-block: 32px;
   --space-inline: 20px;
@@ -17,7 +17,7 @@
 
 @media (min-width: 769px) {
   :root {
-    --container: min(1000px, 100% - 64px);
+    --container: min(1180px, 100% - 64px);
     --space-section: 100px;
     --space-block: 48px;
     --space-inline: 32px;

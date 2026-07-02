@@ -42,10 +42,3 @@ for (const f of files) {
   fs.copyFileSync(lp(f.src), lp(f.dst));
   console.log(`Copied: ${f.dst}`);
 }
-
-const faviconDst = path.join(dstPublicDir, 'favicon.png');
-const logoDst = path.join(dstAssetsDir, 'logo.png');
-if (fs.existsSync(logoDst)) {
-  fs.copyFileSync(lp(logoDst), lp(faviconDst));
-  console.log(`Copied: ${faviconDst}`);
-}
