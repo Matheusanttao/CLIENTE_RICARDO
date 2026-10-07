@@ -1,77 +1,113 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-ring: var(--ring);
+  --radius-lg: 0.875rem;
+  --radius-md: 0.625rem;
+  --radius-sm: 0.375rem;
+}
+
 :root {
-  --bg: #ffffff;
-  --bg2: #f4f7f5;
-  --surface: #ffffff;
-  --border: rgba(20, 35, 28, 0.1);
-  --text: #16211c;
-  --text-muted: #5c6a62;
-  --accent: #1f9d53;
-  --accent-strong: #178246;
-  --accent-soft: rgba(31, 157, 83, 0.1);
-  --ink: #101815;
-  --radius: 16px;
-  --radius-lg: 24px;
-  --container: min(1180px, 100% - 40px);
-  --space-section: 56px;
-  --space-block: 32px;
-  --space-inline: 20px;
+  --background: #f7f8f7;
+  --foreground: #1a1f1c;
+  --card: #ffffff;
+  --card-foreground: #1a1f1c;
+  --muted: #eef1ef;
+  --muted-foreground: #5c6560;
+  --border: #d8ddd9;
+  --primary: #8bc34a;
+  --primary-foreground: #142014;
+  --accent: #e8f5d8;
+  --accent-foreground: #1a1f1c;
+  --destructive: #c62828;
+  --ring: #8bc34a;
+  --graphite: #1a1f1c;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
-@media (min-width: 769px) {
-  :root {
-    --container: min(1180px, 100% - 64px);
-    --space-section: 100px;
-    --space-block: 48px;
-    --space-inline: 32px;
+.dark {
+  --background: #121614;
+  --foreground: #f2f4f2;
+  --card: #1a1f1c;
+  --card-foreground: #f2f4f2;
+  --muted: #242a26;
+  --muted-foreground: #a3ada6;
+  --border: #2e3530;
+  --primary: #a3e635;
+  --primary-foreground: #142014;
+  --accent: #24301c;
+  --accent-foreground: #e8f5d8;
+  --destructive: #ef5350;
+  --ring: #a3e635;
+  --graphite: #0e1210;
+}
+
+@layer base {
+  * {
+    @apply border-border;
   }
-}
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-size: 17px;
-  line-height: 1.6;
-  color: var(--text);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-@media (min-width: 769px) {
   body {
-    font-size: 17px;
-    line-height: 1.65;
+    margin: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding-top: var(--safe-top);
+    /* Home (.app) usa o visual original; áreas /aluno e /personal usam o tema do app */
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
 
-::selection {
-  background: rgba(31, 157, 83, 0.2);
-}
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
+  .pb-safe {
+    padding-bottom: calc(1rem + var(--safe-bottom));
+  }
 
-button {
-  font: inherit;
-  cursor: pointer;
+  .pb-nav {
+    padding-bottom: calc(5.5rem + var(--safe-bottom));
+  }
 }
