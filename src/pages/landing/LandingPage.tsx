@@ -2,7 +2,7 @@ import { useState, useEffect, type SVGProps } from 'react'
 import { Link } from 'react-router-dom'
 import './landing.css'
 import logo from '@/assets/logo.png'
-import photo from '@/assets/ricardo.jpg'
+import photo from '@/assets/ricardo.webp'
 
 const CONTACT = {
   whatsapp: 'https://wa.me/5531982197768',
@@ -342,7 +342,14 @@ export function LandingPage() {
               </div>
 
               <div className="heroVisual" aria-label="Foto do Ricardo">
-                <img className="heroPhoto" src={photo} alt="Ricardo em ambiente de academia" />
+                <img
+                  className="heroPhoto"
+                  src={photo}
+                  alt="Ricardo em ambiente de academia"
+                  width={672}
+                  height={1536}
+                  fetchPriority="high"
+                />
               </div>
             </div>
           </div>

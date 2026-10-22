@@ -24,7 +24,7 @@
 3. Auth redirect URLs (ver `docs/SUPABASE_SETUP.md`)
 4. Bootstrap do 1º admin (`docs/BOOTSTRAP_ADMIN.md`)
 5. Deploy Vercel + `VITE_APP_URL` de produção
-6. Substituir ícones PWA placeholder em `public/icons/` por artes finais
+6. ~~Substituir ícones PWA placeholder~~ — feito (gerados a partir do logo)
 
 ## Próximas fases
 

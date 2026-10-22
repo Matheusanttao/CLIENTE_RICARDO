@@ -1,60 +1,120 @@
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
-      manifest: {
-        name: 'Ricardo Neves Personal',
-        short_name: 'RN Personal',
-        description: 'Seu treino. Sua evolução. Seu resultado.',
-        theme_color: '#1a1f1c',
-        background_color: '#f7f8f7',
-        display: 'standalone',
-        orientation: 'portrait',
-        start_url: '/aluno',
-        lang: 'pt-BR',
-        icons: [
-          {
-            src: '/icons/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: '/icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
-      },
-      workbox: {
-        // Cache apenas estáticos públicos — nunca respostas privadas da API
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallback: '/index.html',
-        runtimeCaching: [],
-      },
-      devOptions: {
-        enabled: false,
-      },
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+/**
+ * SEO: troca %APP_URL% no index.html pela URL pública (og:image e canonical
+ * precisam de URL absoluta) e gera robots.txt + sitemap.xml no build.
+ */
+function seo(appUrl: string): Plugin {
+  return {
+    name: 'seo',
+    transformIndexHtml(html) {
+      return html.replaceAll('%APP_URL%', appUrl)
     },
-  },
-  base: '/',
+    generateBundle() {
+      if (!appUrl) {
+        this.warn('VITE_APP_URL não definido — robots.txt/sitemap.xml não gerados e og:image ficará relativo.')
+        return
+      }
+      this.emitFile({
+        type: 'asset',
+        fileName: 'robots.txt',
+        source: [
+          'User-agent: *',
+          'Allow: /',
+          'Disallow: /aluno/',
+          'Disallow: /personal/',
+          '',
+          `Sitemap: ${appUrl}/sitemap.xml`,
+          '',
+        ].join('\n'),
+      })
+      this.emitFile({
+        type: 'asset',
+        fileName: 'sitemap.xml',
+        source: [
+          '<?xml version="1.0" encoding="UTF-8"?>',
+          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+          `  <url><loc>${appUrl}/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>`,
+          '</urlset>',
+          '',
+        ].join('\n'),
+      })
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const appUrl = (loadEnv(mode, process.cwd(), 'VITE_').VITE_APP_URL ?? '').trim().replace(/\/$/, '')
+
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      seo(appUrl),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg', 'icons/*.png'],
+        manifest: {
+          name: 'Ricardo Neves Personal',
+          short_name: 'RN Personal',
+          description: 'Seu treino. Sua evolução. Seu resultado.',
+          theme_color: '#1a1f1c',
+          background_color: '#f7f8f7',
+          display: 'standalone',
+          orientation: 'portrait',
+          start_url: '/aluno',
+          lang: 'pt-BR',
+          icons: [
+            {
+              src: '/icons/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: '/icons/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              src: '/icons/icon-maskable-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+        workbox: {
+          // Cache apenas estáticos públicos — nunca respostas privadas da API
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+          navigateFallback: '/index.html',
+          runtimeCaching: [],
+        },
+        devOptions: {
+          enabled: false,
+        },
+      }),
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          // Bibliotecas em arquivos próprios: mudam pouco e ficam no cache entre deploys
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-dom/client', 'react-router-dom'],
+            supabase: ['@supabase/supabase-js'],
+            query: ['@tanstack/react-query'],
+          },
+        },
+      },
+    },
+    base: '/',
+  }
 })
