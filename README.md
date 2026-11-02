@@ -77,3 +77,22 @@ Documentadas em `PLAN.md`: agenda, evolução/gráficos, PDF, gateway de pagamen
 ## Testes
 
 Cobrem IMC/composição, timer de descanso por deadline, sanitização de redirect e dinheiro (`npm test`).
+
+## App Android (APK)
+
+O APK é uma "casca" (Capacitor) que abre `https://personalricardoneves.com.br`.
+**Todo deploy na Vercel já aparece no app** — não precisa gerar APK de novo.
+Dentro do app a home institucional é trocada por uma tela "Sou aluno / Sou personal"
+(detectado pelo user agent `RNPersonalApp`, ver `src/lib/native/isNativeApp.ts`).
+
+Só gere um APK novo se mudar ícone, nome, URL ou `capacitor.config.ts`
+(aumente `versionCode` em `android/app/build.gradle`):
+
+```bash
+npx cap sync android
+cd android && ./gradlew assembleRelease   # requer JDK 17/21 em JAVA_HOME
+# saída: android/app/build/outputs/apk/release/app-release.apk
+```
+
+A chave de assinatura (`android/app/rn-personal-release.jks` + `android/keystore.properties`)
+não vai para o git. **Guarde um backup** — sem ela não dá para atualizar o app já instalado.

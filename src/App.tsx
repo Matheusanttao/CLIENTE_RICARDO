@@ -8,6 +8,8 @@ import { LoadingScreen } from '@/components/shared/LoadingScreen'
 import { ThemeProvider } from '@/lib/theme'
 import { LandingPage } from '@/pages/landing/LandingPage'
 import { AreaGate } from '@/pages/AreaGate'
+import { AppEntryPage } from '@/pages/AppEntryPage'
+import { isNativeApp } from '@/lib/native/isNativeApp'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 /** Carrega uma página sob demanda — o site público não baixa o código das áreas logadas. */
@@ -64,7 +66,7 @@ export default function App() {
           <AuthProvider>
             <Suspense fallback={<LoadingScreen />}>
               <Routes>
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={isNativeApp() ? <AppEntryPage /> : <LandingPage />} />
 
                 <Route path="/aluno" element={<AreaGate area="aluno" />} />
                 <Route path="/aluno/entrar" element={<LoginPage area="aluno" />} />
