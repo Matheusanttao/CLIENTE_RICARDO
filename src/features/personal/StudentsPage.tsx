@@ -12,15 +12,32 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { requireSupabase } from '@/lib/supabase/client'
 import { GOALS } from '@/lib/constants'
+import { generatePassword, suggestUsername } from '@/lib/auth/username'
+import {
+  createStudentLogin,
+  CredentialFields,
+  CredentialsDialog,
+  validateCredentials,
+  type Credentials,
+} from '@/features/personal/StudentAccess'
 
 export function StudentsPage() {
-  const { staffMembership, user } = useAuth()
+  const { staffMembership } = useAuth()
   const orgId = staffMembership?.organization_id
   const qc = useQueryClient()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState<'all' | 'active' | 'archived' | 'pending'>('all')
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', primary_goal: '' })
+  const emptyForm = { full_name: '', email: '', phone: '', primary_goal: '', username: '', password: '' }
+  const [form, setForm] = useState(emptyForm)
+  const [usernameTouched, setUsernameTouched] = useState(false)
+  const [credentials, setCredentials] = useState<Credentials | null>(null)
+
+  function openNew() {
+    setForm({ ...emptyForm, password: generatePassword() })
+    setUsernameTouched(false)
+    setOpen(true)
+  }
 
   const students = useQuery({
     queryKey: ['personal', 'students', orgId],
@@ -29,7 +46,7 @@ export function StudentsPage() {
       const sb = requireSupabase()
       const { data, error } = await sb
         .from('students')
-        .select('id, full_name, email, phone, status, primary_goal, level')
+        .select('id, full_name, email, phone, status, primary_goal, level, login_username')
         .eq('organization_id', orgId!)
         .order('full_name')
       if (error) throw error
@@ -55,45 +72,36 @@ export function StudentsPage() {
 
   const createStudent = useMutation({
     mutationFn: async () => {
-      const sb = requireSupabase()
-      const { error } = await sb.from('students').insert({
-        organization_id: orgId!,
-        full_name: form.full_name,
-        email: form.email || null,
-        phone: form.phone || null,
-        primary_goal: form.primary_goal || null,
-        status: 'active',
-      })
-      if (error) throw error
-    },
-    onSuccess: () => {
-      toast.success('Aluno cadastrado')
-      setOpen(false)
-      setForm({ full_name: '', email: '', phone: '', primary_goal: '' })
-      qc.invalidateQueries({ queryKey: ['personal', 'students'] })
-    },
-    onError: (e: Error) => toast.error(e.message),
-  })
-
-  const invite = useMutation({
-    mutationFn: async (email: string) => {
+      const invalid = validateCredentials(form.username, form.password)
+      if (invalid) throw new Error(invalid)
       const sb = requireSupabase()
       const { data, error } = await sb
-        .from('student_invitations')
+        .from('students')
         .insert({
           organization_id: orgId!,
-          email,
-          invited_by: user?.id,
+          full_name: form.full_name,
+          email: form.email || null,
+          phone: form.phone || null,
+          primary_goal: form.primary_goal || null,
+          status: 'active',
         })
-        .select('token')
+        .select('id')
         .single()
       if (error) throw error
-      return data.token as string
+      try {
+        await createStudentLogin(data.id, form.username, form.password)
+      } catch (e) {
+        // não deixa aluno "pela metade": desfaz o cadastro se o acesso falhar
+        await sb.from('students').delete().eq('id', data.id)
+        throw e
+      }
+      return { fullName: form.full_name, username: form.username, password: form.password }
     },
-    onSuccess: (token) => {
-      const url = `${window.location.origin}/aluno/convite?token=${token}`
-      void navigator.clipboard.writeText(url)
-      toast.success('Convite criado e link copiado')
+    onSuccess: (created) => {
+      setOpen(false)
+      setForm(emptyForm)
+      setCredentials(created)
+      qc.invalidateQueries({ queryKey: ['personal', 'students'] })
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -114,7 +122,7 @@ export function StudentsPage() {
   const filtered = useMemo(() => {
     return (students.data || []).filter((s) => {
       if (status !== 'all' && s.status !== status) return false
-      const hay = `${s.full_name} ${s.email || ''}`.toLowerCase()
+      const hay = `${s.full_name} ${s.email || ''} ${s.login_username || ''}`.toLowerCase()
       return hay.includes(q.toLowerCase())
     })
   }, [students.data, q, status])
@@ -124,9 +132,9 @@ export function StudentsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold">Alunos</h1>
-          <p className="text-sm text-muted-foreground">Cadastro, convites e solicitações.</p>
+          <p className="text-sm text-muted-foreground">Cadastre o aluno com usuário e senha e envie pelo WhatsApp.</p>
         </div>
-        <Button onClick={() => setOpen(true)}>Novo aluno</Button>
+        <Button onClick={openNew}>Novo aluno</Button>
       </div>
 
       {(requests.data?.length || 0) > 0 && (
@@ -165,9 +173,9 @@ export function StudentsPage() {
       {filtered.length === 0 ? (
         <EmptyState
           title="Nenhum aluno encontrado"
-          description="Cadastre um aluno ou envie um convite."
+          description="Cadastre um aluno com usuário e senha."
           actionLabel="Cadastrar"
-          onAction={() => setOpen(true)}
+          onAction={openNew}
         />
       ) : (
         <ul className="space-y-2">
@@ -179,18 +187,15 @@ export function StudentsPage() {
                     <Link to={`/personal/alunos/${s.id}`} className="font-medium hover:underline">
                       {s.full_name}
                     </Link>
-                    <p className="text-sm text-muted-foreground">{s.email || 'Sem e-mail'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {s.login_username ? `Usuário: ${s.login_username}` : 'Sem acesso ao app'}
+                    </p>
                     <div className="mt-1 flex gap-2">
                       <Badge variant="secondary">{s.status}</Badge>
                       {s.primary_goal && <Badge variant="outline">{s.primary_goal}</Badge>}
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {s.email && (
-                      <Button variant="outline" size="sm" onClick={() => invite.mutate(s.email!)}>
-                        Convidar
-                      </Button>
-                    )}
                     <Button asChild size="sm">
                       <Link to={`/personal/alunos/${s.id}`}>Abrir</Link>
                     </Button>
@@ -210,10 +215,16 @@ export function StudentsPage() {
           <div className="space-y-3">
             <div className="space-y-2">
               <Label>Nome completo</Label>
-              <Input value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+              <Input
+                value={form.full_name}
+                onChange={(e) => {
+                  const full_name = e.target.value
+                  setForm((f) => ({ ...f, full_name, username: usernameTouched ? f.username : suggestUsername(full_name) }))
+                }}
+              />
             </div>
             <div className="space-y-2">
-              <Label>E-mail</Label>
+              <Label>E-mail (opcional)</Label>
               <Input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
             <div className="space-y-2">
@@ -235,16 +246,29 @@ export function StudentsPage() {
                 ))}
               </select>
             </div>
+            <div className="space-y-3 rounded-md border border-border p-3">
+              <p className="text-sm font-medium">Acesso ao app</p>
+              <CredentialFields
+                username={form.username}
+                password={form.password}
+                onUsername={(username) => {
+                  setUsernameTouched(true)
+                  setForm((f) => ({ ...f, username }))
+                }}
+                onPassword={(password) => setForm((f) => ({ ...f, password }))}
+              />
+            </div>
             <Button
               className="w-full"
               disabled={!form.full_name || createStudent.isPending}
               onClick={() => createStudent.mutate()}
             >
-              Salvar
+              {createStudent.isPending ? 'Salvando…' : 'Salvar e criar acesso'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+      <CredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
     </div>
   )
 }

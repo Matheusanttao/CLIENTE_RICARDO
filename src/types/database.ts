@@ -244,6 +244,7 @@ export interface Database {
           id: string
           organization_id: string
           user_id: string | null
+          login_username: string | null
           full_name: string
           email: string | null
           phone: string | null
@@ -270,6 +271,7 @@ export interface Database {
           id?: string
           organization_id: string
           user_id?: string | null
+          login_username?: string | null
           full_name: string
           email?: string | null
           phone?: string | null
@@ -296,6 +298,7 @@ export interface Database {
           id?: string
           organization_id?: string
           user_id?: string | null
+          login_username?: string | null
           full_name?: string
           email?: string | null
           phone?: string | null
@@ -1362,6 +1365,11 @@ export interface Database {
       current_student_id: { Args: { p_org_id?: string }; Returns: string }
       accept_student_invitation: { Args: { p_token: string; p_full_name: string }; Returns: string }
       approve_access_request: { Args: { p_request_id: string }; Returns: string }
+      create_student_login: {
+        Args: { p_student_id: string; p_username: string; p_password: string }
+        Returns: string
+      }
+      reset_student_password: { Args: { p_student_id: string; p_password: string }; Returns: undefined }
     }
     Enums: {
       member_role: MemberRole

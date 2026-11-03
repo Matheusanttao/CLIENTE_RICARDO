@@ -12,6 +12,7 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { calcFatFreeMass, calcFatMass, calcIMC } from '@/lib/assessment'
 import { GOALS, WEEKDAYS } from '@/lib/constants'
 import { requireSupabase } from '@/lib/supabase/client'
+import { StudentAccessCard } from '@/features/personal/StudentAccess'
 
 export function StudentDetailPage() {
   const { id } = useParams()
@@ -192,6 +193,8 @@ export function StudentDetailPage() {
           </Button>
         ))}
       </div>
+
+      {tab === 'dados' && <StudentAccessCard student={s} />}
 
       {tab === 'dados' && (
         <Card>

@@ -14,9 +14,10 @@ import { getAppUrl, isSupabaseConfigured } from '@/lib/env'
 import { sanitizeReturnTo } from '@/lib/auth/redirect'
 import { requireSupabase } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/constants'
+import { loginIdentifierToEmail } from '@/lib/auth/username'
 
 const loginSchema = z.object({
-  email: z.string().email('E-mail inválido'),
+  identifier: z.string().trim().min(3, 'Informe seu usuário'),
   password: z.string().min(6, 'Mínimo de 6 caracteres'),
 })
 
@@ -44,9 +45,12 @@ export function LoginPage({ area }: { area: 'aluno' | 'personal' }) {
     setError(null)
     try {
       const sb = requireSupabase()
-      const { error: signError } = await sb.auth.signInWithPassword(values)
+      const { error: signError } = await sb.auth.signInWithPassword({
+        email: loginIdentifierToEmail(values.identifier),
+        password: values.password,
+      })
       if (signError) {
-        setError(signError.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : signError.message)
+        setError(signError.message === 'Invalid login credentials' ? 'Usuário ou senha incorretos.' : signError.message)
         return
       }
       await auth.refreshProfile()
@@ -62,11 +66,18 @@ export function LoginPage({ area }: { area: 'aluno' | 'personal' }) {
   return (
     <AuthShell
       title={area === 'personal' ? 'Área do personal' : 'Área do aluno'}
-      description="Entre com seu e-mail e senha."
+      description={area === 'personal' ? 'Entre com seu e-mail ou usuário e senha.' : 'Entre com o usuário e a senha que seu personal enviou.'}
     >
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
-        <Field label="E-mail" error={form.formState.errors.email?.message}>
-          <Input type="email" autoComplete="email" {...form.register('email')} />
+        <Field label={area === 'personal' ? 'E-mail ou usuário' : 'Usuário'} error={form.formState.errors.identifier?.message}>
+          <Input
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            {...form.register('identifier')}
+          />
         </Field>
         <Field label="Senha" error={form.formState.errors.password?.message}>
           <Input type="password" autoComplete="current-password" {...form.register('password')} />
@@ -76,27 +87,11 @@ export function LoginPage({ area }: { area: 'aluno' | 'personal' }) {
           {form.formState.isSubmitting ? 'Entrando…' : 'Entrar'}
         </Button>
       </form>
-      <div className="mt-4 space-y-2 text-sm">
-        <Link className="text-primary underline-offset-4 hover:underline" to={`/${area}/recuperar-senha`}>
-          Esqueci minha senha
-        </Link>
-        {area === 'aluno' && (
-          <p className="text-muted-foreground">
-            Novo por aqui?{' '}
-            <Link className="text-foreground underline" to="/aluno/convite">
-              Aceitar convite
-            </Link>{' '}
-            ou{' '}
-            <Link className="text-foreground underline" to="/aluno/solicitar-acesso">
-              solicitar acesso
-            </Link>
-            .
-          </p>
-        )}
-        {area === 'personal' && (
-          <p className="text-muted-foreground">
-            Não há cadastro público de administrador. Veja a documentação de bootstrap.
-          </p>
+      <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+        {area === 'aluno' ? (
+          <p>Ainda não tem acesso ou esqueceu a senha? Fale com o seu personal.</p>
+        ) : (
+          <p>Esqueceu a senha? Redefina pelo painel do Supabase (Authentication → Users).</p>
         )}
       </div>
     </AuthShell>
