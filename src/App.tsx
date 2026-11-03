@@ -11,6 +11,7 @@ import { AreaGate } from '@/pages/AreaGate'
 import { AppEntryPage } from '@/pages/AppEntryPage'
 import { isNativeApp } from '@/lib/native/isNativeApp'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
 
 /** Carrega uma página sob demanda — o site público não baixa o código das áreas logadas. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mesma restrição de React.lazy
@@ -117,6 +118,8 @@ export default function App() {
                   <Route path="financeiro" element={<PersonalFinancePage />} />
                   <Route path="configuracoes" element={<PersonalSettingsPage />} />
                 </Route>
+
+                <Route path="/privacidade" element={<PrivacyPage />} />
 
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -17,6 +18,9 @@ import { ANAMNESIS_FORM_VERSION } from '@/lib/constants'
 import { isOnline, OFFLINE_SAVE_MESSAGE } from '@/lib/offline'
 import { requireSupabase } from '@/lib/supabase/client'
 import type { Json } from '@/types/database'
+
+/** Versão do texto de consentimento de dados de saúde (mudar se o texto mudar). */
+const HEALTH_CONSENT_VERSION = '2026-11'
 
 const formSchema = z.object({
   health_conditions: z.string().optional(),
@@ -129,6 +133,8 @@ export function AnamnesisPage() {
     }
   }, [recordQuery.data, form])
 
+  const [healthConsent, setHealthConsent] = useState(false)
+
   const readOnly =
     recordQuery.data != null &&
     !['draft', 'submitted'].includes(recordQuery.data.status)
@@ -140,6 +146,9 @@ export function AnamnesisPage() {
       const values = form.getValues()
       if (submit && !values.truthfulness_declared) {
         throw new Error('Marque a declaração de veracidade para enviar.')
+      }
+      if (submit && !healthConsent) {
+        throw new Error('Autorize o uso dos seus dados de saúde para enviar.')
       }
       const sb = requireSupabase()
       const payload = valuesToJson(values)
@@ -159,11 +168,23 @@ export function AnamnesisPage() {
       if (recordQuery.data?.id && ['draft', 'submitted'].includes(recordQuery.data.status)) {
         const { error } = await sb.from('anamnesis_records').update(base).eq('id', recordQuery.data.id)
         if (error) throw error
-        return
+      } else {
+        const { error } = await sb.from('anamnesis_records').insert(base)
+        if (error) throw error
       }
 
-      const { error } = await sb.from('anamnesis_records').insert(base)
-      if (error) throw error
+      if (submit) {
+        // Registro do consentimento LGPD (art. 11, I) para dados de saúde
+        const { error } = await sb.from('consent_records').insert({
+          organization_id: activeStudent.organization_id,
+          user_id: user.id,
+          student_id: activeStudent.id,
+          consent_type: 'health_data_anamnesis',
+          version: HEALTH_CONSENT_VERSION,
+          accepted: true,
+        })
+        if (error) throw error
+      }
     },
     onSuccess: (_d, submit) => {
       setError(null)
@@ -249,6 +270,22 @@ export function AnamnesisPage() {
                 />
                 <Label htmlFor="truth" className="text-sm leading-snug">
                   Li e concordo com a declaração de veracidade
+                </Label>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="health-consent"
+                  checked={healthConsent}
+                  disabled={readOnly}
+                  onCheckedChange={(v) => setHealthConsent(v === true)}
+                />
+                <Label htmlFor="health-consent" className="text-sm leading-snug">
+                  Autorizo o uso dos meus dados de saúde apenas para a prescrição e o acompanhamento dos
+                  meus treinos, conforme a{' '}
+                  <Link to="/privacidade" className="underline">
+                    Política de Privacidade
+                  </Link>
+                  .
                 </Label>
               </div>
             </div>

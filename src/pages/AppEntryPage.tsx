@@ -37,6 +37,9 @@ export function AppEntryPage() {
           </Link>
         </Button>
       </div>
+      <Link to="/privacidade" className="text-xs text-muted-foreground underline">
+        Política de Privacidade
+      </Link>
     </main>
   )
 }

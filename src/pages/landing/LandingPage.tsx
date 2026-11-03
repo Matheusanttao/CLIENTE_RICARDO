@@ -677,7 +677,7 @@ export function LandingPage() {
 
           <div className="footerBottom">
             <p className="footerCopy">
-              © {new Date().getFullYear()} Ricardo Personal. Desenvolvido por <a href="https://matheusantao.com.br" target="_blank" rel="noreferrer">Matheus Antão</a>.
+              © {new Date().getFullYear()} Ricardo Personal. Desenvolvido por <a href="https://matheusantao.com.br" target="_blank" rel="noreferrer">Matheus Antão</a>. · <Link to="/privacidade">Política de Privacidade</Link>
             </p>
           </div>
         </div>
