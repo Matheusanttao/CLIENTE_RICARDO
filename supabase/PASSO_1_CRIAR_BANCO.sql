@@ -1,7 +1,7 @@
 -- ============================================================
--- SETUP COMPLETO DO BANCO — Ricardo Neves Personal
--- Cole TUDO no Supabase > SQL Editor > New query > Run (uma vez só).
--- Gerado a partir de supabase/migrations/*.sql
+-- PASSO 1 — CRIAR O BANCO COMPLETO (Ricardo Neves Personal)
+-- Supabase > SQL Editor > New query > cole TUDO > Run
+-- Rode UMA vez num projeto novo. Gerado de supabase/migrations/*.sql
 -- ============================================================
 
 -- >>> supabase/migrations/20260326000001_init.sql
@@ -1152,7 +1152,6 @@ $$;
 revoke all on function public.approve_access_request(uuid) from public;
 grant execute on function public.approve_access_request(uuid) to authenticated;
 
-
 -- >>> supabase/migrations/20261103000001_exercise_images.sql
 -- Foto demonstrativa do exercício
 -- Bucket público: são fotos de execução de exercício (não são dados pessoais),
@@ -1211,7 +1210,6 @@ create policy exercise_images_staff_delete on storage.objects
     bucket_id = 'exercise-images'
     and public.is_org_staff(((storage.foldername(name))[1])::uuid)
   );
-
 
 -- >>> supabase/migrations/20261103000002_student_username_login.sql
 -- Acesso do aluno por USUÁRIO + SENHA criado pelo personal (sem e-mail).
@@ -1376,33 +1374,3 @@ begin
   return new;
 end;
 $$;
-
-
--- ============================================================
--- PASSO 2 — TORNAR O RICARDO ADMINISTRADOR
--- Rode SÓ ESTE BLOCO depois de criar a conta dele em
--- Authentication > Users > Add user (marque "Auto Confirm User").
--- Troque o e-mail abaixo. Se o usuário ainda não existir, só avisa.
--- ============================================================
-do $$
-declare
-  v_email text := 'EMAIL_DO_RICARDO@gmail.com';  -- << TROQUE AQUI
-  v_uid uuid;
-begin
-  select id into v_uid from auth.users where lower(email) = lower(v_email);
-  if v_uid is null then
-    raise notice 'Usuário % ainda não existe. Crie em Authentication > Users e rode este bloco de novo.', v_email;
-    return;
-  end if;
-
-  insert into public.organization_members (organization_id, user_id, role, status)
-  values ('a0000000-0000-4000-8000-000000000001', v_uid, 'owner', 'active')
-  on conflict (organization_id, user_id)
-  do update set role = 'owner', status = 'active';
-
-  update public.profiles
-  set full_name = coalesce(nullif(full_name, v_email), 'Ricardo Neves')
-  where id = v_uid;
-
-  raise notice 'Pronto: % agora é administrador (owner).', v_email;
-end $$;
