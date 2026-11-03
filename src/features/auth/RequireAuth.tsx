@@ -64,8 +64,8 @@ export function RequireAuth({
               <CardTitle>{pending ? 'Acesso pendente' : 'Vínculo necessário'}</CardTitle>
               <CardDescription>
                 {pending
-                  ? 'Sua solicitação ou cadastro ainda aguarda aprovação do personal.'
-                  : 'Você precisa de um convite ou solicitação aprovada para acessar a área do aluno.'}
+                  ? 'Seu cadastro ainda aguarda liberação do personal.'
+                  : 'Seu acesso é criado pelo seu personal. Fale com ele para receber usuário e senha.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
@@ -74,9 +74,6 @@ export function RequireAuth({
                   <Link to="/personal/dashboard">Ir para área do personal</Link>
                 </Button>
               )}
-              <Button variant="outline" asChild>
-                <Link to="/aluno/solicitar-acesso">Solicitar acesso</Link>
-              </Button>
               <Button variant="ghost" asChild>
                 <Link to="/">Voltar ao início</Link>
               </Button>

@@ -53,7 +53,7 @@ export function PrivacyPage() {
           <li>Montar e acompanhar seus treinos com segurança, de acordo com sua saúde e objetivos.</li>
           <li>Registrar avaliações e mostrar sua evolução.</li>
           <li>Organizar mensalidades e a relação de prestação do serviço.</li>
-          <li>Responder seus contatos e enviar comunicações sobre a sua conta (convite, recuperação de senha).</li>
+          <li>Responder seus contatos e enviar seus dados de acesso ao app (usuário e senha), criados pelo personal.</li>
         </ul>
         <p>Não vendemos seus dados e não os usamos para publicidade.</p>
       </Section>

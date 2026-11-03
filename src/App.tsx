@@ -23,8 +23,6 @@ function lazyPage<M extends Record<K, ComponentType<any>>, K extends keyof M>(
 }
 
 const LoginPage = lazyPage(() => import('@/features/auth/AuthForms'), 'LoginPage')
-const ForgotPasswordPage = lazyPage(() => import('@/features/auth/AuthForms'), 'ForgotPasswordPage')
-const ResetPasswordPage = lazyPage(() => import('@/features/auth/AuthForms'), 'ResetPasswordPage')
 const AuthCallbackPage = lazyPage(() => import('@/features/auth/AuthForms'), 'AuthCallbackPage')
 
 const StudentLayout = lazyPage(() => import('@/layouts/StudentLayout'), 'StudentLayout')
@@ -36,8 +34,6 @@ const StudentAnamnesisPage = lazyPage(() => import('@/features/student/Anamnesis
 const StudentAssessmentsPage = lazyPage(() => import('@/features/student/AssessmentsPage'), 'AssessmentsPage')
 const StudentPaymentsPage = lazyPage(() => import('@/features/student/PaymentsPage'), 'PaymentsPage')
 const StudentProfilePage = lazyPage(() => import('@/features/student/ProfilePage'), 'ProfilePage')
-const InvitePage = lazyPage(() => import('@/features/student/InvitePage'), 'InvitePage')
-const AccessRequestPage = lazyPage(() => import('@/features/student/AccessRequestPage'), 'AccessRequestPage')
 
 const PersonalLayout = lazyPage(() => import('@/layouts/PersonalLayout'), 'PersonalLayout')
 const PersonalDashboardPage = lazyPage(() => import('@/features/personal/DashboardPage'), 'DashboardPage')
@@ -71,11 +67,7 @@ export default function App() {
 
                 <Route path="/aluno" element={<AreaGate area="aluno" />} />
                 <Route path="/aluno/entrar" element={<LoginPage area="aluno" />} />
-                <Route path="/aluno/recuperar-senha" element={<ForgotPasswordPage area="aluno" />} />
-                <Route path="/aluno/redefinir-senha" element={<ResetPasswordPage area="aluno" />} />
                 <Route path="/aluno/auth/callback" element={<AuthCallbackPage area="aluno" />} />
-                <Route path="/aluno/convite" element={<InvitePage />} />
-                <Route path="/aluno/solicitar-acesso" element={<AccessRequestPage />} />
 
                 <Route
                   path="/aluno"
@@ -97,8 +89,6 @@ export default function App() {
 
                 <Route path="/personal" element={<AreaGate area="personal" />} />
                 <Route path="/personal/entrar" element={<LoginPage area="personal" />} />
-                <Route path="/personal/recuperar-senha" element={<ForgotPasswordPage area="personal" />} />
-                <Route path="/personal/redefinir-senha" element={<ResetPasswordPage area="personal" />} />
                 <Route path="/personal/auth/callback" element={<AuthCallbackPage area="personal" />} />
 
                 <Route
