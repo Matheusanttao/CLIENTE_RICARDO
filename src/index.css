@@ -133,3 +133,22 @@
 /* listas horizontais roláveis (chips) sem barra de rolagem */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* toque ágil no celular: sem atraso de 300ms, sem flash azul, resposta imediata */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+a,
+button,
+[role='button'],
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
+}
+button:not(:disabled):active,
+a:active {
+  transform: scale(0.98);
+  transition: transform 80ms ease-out;
+}

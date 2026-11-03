@@ -40,15 +40,15 @@ export function FinancePage() {
       const today = format(new Date(), 'yyyy-MM-dd')
       const upcomingLimit = format(addDays(new Date(), 14), 'yyyy-MM-dd')
 
-      // Atualiza vencidas antes de agregar
-      await sb
+      // Marca as vencidas no banco em paralelo (a tela já calcula o status certo)
+      const markOverdue = sb
         .from('charges')
         .update({ status: 'overdue' })
         .eq('organization_id', orgId!)
         .eq('status', 'pending')
         .lt('due_date', today)
 
-      const [plans, charges, payments, students] = await Promise.all([
+      const [plans, chargesRes, payments, students] = await Promise.all([
         sb.from('billing_plans').select('*').eq('organization_id', orgId!).order('name'),
         sb
           .from('charges')
@@ -62,7 +62,14 @@ export function FinancePage() {
           .eq('organization_id', orgId!)
           .gte('paid_at', monthStart),
         sb.from('students').select('id, full_name').eq('organization_id', orgId!).eq('status', 'active'),
+        markOverdue,
       ])
+      const charges = {
+        ...chargesRes,
+        data: (chargesRes.data || []).map((c) =>
+          c.status === 'pending' && c.due_date < today ? { ...c, status: 'overdue' as const } : c,
+        ),
+      }
 
       if (plans.error) throw plans.error
       if (charges.error) throw charges.error

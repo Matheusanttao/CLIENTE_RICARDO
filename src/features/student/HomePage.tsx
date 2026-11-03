@@ -29,75 +29,64 @@ export function HomePage() {
     queryFn: async () => {
       const sb = requireSupabase()
       const today = format(new Date(), 'yyyy-MM-dd')
-
-      const { data: programs, error: progErr } = await sb
-        .from('workout_programs')
-        .select('id, title, valid_until, frequency_per_week')
-        .eq('student_id', studentId!)
-        .eq('status', 'published')
-        .or(`valid_until.is.null,valid_until.gte.${today}`)
-        .order('published_at', { ascending: false })
-        .limit(1)
-
-      if (progErr) throw progErr
-      const program = programs?.[0] ?? null
-
-      let session: { id: string; label: string } | null = null
-      let exerciseCount = 0
-
-      if (program) {
-        const { data: sessions, error: sessErr } = await sb
-          .from('workout_sessions')
-          .select('id, label, sort_order')
-          .eq('program_id', program.id)
-          .order('sort_order')
-        if (sessErr) throw sessErr
-        const list = sessions ?? []
-        if (list.length > 0) {
-          const idx = pickTodaySessionIndex(list.length)
-          session = list[idx] ?? list[0]!
-          const { count, error: exErr } = await sb
-            .from('workout_exercises')
-            .select('id', { count: 'exact', head: true })
-            .eq('session_id', session.id)
-          if (exErr) throw exErr
-          exerciseCount = count ?? 0
-        }
-      }
-
-      const { data: lastLog, error: logErr } = await sb
-        .from('training_logs')
-        .select('id, status, started_at, ended_at')
-        .eq('student_id', studentId!)
-        .in('status', ['completed', 'partial'])
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (logErr) throw logErr
-
-      const { data: inProgress, error: ipErr } = await sb
-        .from('training_logs')
-        .select('id')
-        .eq('student_id', studentId!)
-        .eq('status', 'in_progress')
-        .maybeSingle()
-      if (ipErr) throw ipErr
-
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString()
-      const { count: weekCount } = await sb
-        .from('training_logs')
-        .select('id', { count: 'exact', head: true })
-        .eq('student_id', studentId!)
-        .in('status', ['completed', 'partial'])
-        .gte('started_at', weekStart)
+
+      // Tudo em paralelo (uma única rodada até o servidor)
+      const [programsRes, lastLogRes, inProgressRes, weekRes] = await Promise.all([
+        sb
+          .from('workout_programs')
+          .select('id, title, valid_until, frequency_per_week, workout_sessions(id, label, sort_order, workout_exercises(count))')
+          .eq('student_id', studentId!)
+          .eq('status', 'published')
+          .or(`valid_until.is.null,valid_until.gte.${today}`)
+          .order('published_at', { ascending: false })
+          .limit(1),
+        sb
+          .from('training_logs')
+          .select('id, status, started_at, ended_at')
+          .eq('student_id', studentId!)
+          .in('status', ['completed', 'partial'])
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        sb
+          .from('training_logs')
+          .select('id')
+          .eq('student_id', studentId!)
+          .eq('status', 'in_progress')
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        sb
+          .from('training_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('student_id', studentId!)
+          .in('status', ['completed', 'partial'])
+          .gte('started_at', weekStart),
+      ])
+      if (programsRes.error) throw programsRes.error
+      if (lastLogRes.error) throw lastLogRes.error
+      if (inProgressRes.error) throw inProgressRes.error
+
+      type SessionRow = { id: string; label: string; sort_order: number; workout_exercises: { count: number }[] | null }
+      const raw = programsRes.data?.[0] as
+        | { id: string; title: string; valid_until: string | null; frequency_per_week: number | null; workout_sessions: SessionRow[] | null }
+        | undefined
+      const program = raw
+        ? { id: raw.id, title: raw.title, valid_until: raw.valid_until, frequency_per_week: raw.frequency_per_week }
+        : null
+      const sessions = [...(raw?.workout_sessions ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+      const picked = sessions.length > 0 ? (sessions[pickTodaySessionIndex(sessions.length)] ?? sessions[0]!) : null
+      const session = picked ? { id: picked.id, label: picked.label } : null
+      const exerciseCount = picked?.workout_exercises?.[0]?.count ?? 0
 
       return {
         program,
         session,
         exerciseCount,
-        lastLog,
-        inProgressLogId: inProgress?.id ?? null,
-        weekCount: weekCount ?? 0,
+        lastLog: lastLogRes.data,
+        inProgressLogId: inProgressRes.data?.id ?? null,
+        weekCount: weekRes.count ?? 0,
       }
     },
   })

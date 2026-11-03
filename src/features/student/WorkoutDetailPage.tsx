@@ -39,26 +39,21 @@ export function WorkoutDetailPage() {
     enabled: Boolean(programId && activeStudent?.id),
     queryFn: async () => {
       const sb = requireSupabase()
-      const { data: program, error: pErr } = await sb
+      const { data, error: pErr } = await sb
         .from('workout_programs')
-        .select('id, title, objective, organization_id, student_id, status')
+        .select(
+          'id, title, objective, organization_id, student_id, status, workout_sessions(id, label, sort_order, estimated_minutes, notes, workout_exercises(id, session_id, exercise_name, sets, reps, suggested_load, load_unit, rest_seconds, sort_order, notes, exercise_image_path))',
+        )
         .eq('id', programId!)
         .eq('student_id', activeStudent!.id)
         .eq('status', 'published')
         .maybeSingle()
       if (pErr) throw pErr
-      if (!program) return null
+      if (!data) return null
 
-      const { data: sessions, error: sErr } = await sb
-        .from('workout_sessions')
-        .select('id, label, sort_order, estimated_minutes, notes')
-        .eq('program_id', program.id)
-        .order('sort_order')
-      if (sErr) throw sErr
-
-      const sessionIds = (sessions ?? []).map((s) => s.id)
-      let exercisesBySession: Record<string, Array<{
+      type ExerciseRow = {
         id: string
+        session_id: string
         exercise_name: string
         sets: number | null
         reps: string | null
@@ -66,26 +61,26 @@ export function WorkoutDetailPage() {
         load_unit: string | null
         rest_seconds: number | null
         sort_order: number
+        notes: string | null
         exercise_image_path: string | null
-      }>> = {}
-
-      if (sessionIds.length > 0) {
-        const { data: exercises, error: eErr } = await sb
-          .from('workout_exercises')
-          .select(
-            'id, session_id, exercise_name, sets, reps, suggested_load, load_unit, rest_seconds, sort_order, notes, exercise_image_path',
-          )
-          .in('session_id', sessionIds)
-          .order('sort_order')
-        if (eErr) throw eErr
-        for (const ex of exercises ?? []) {
-          const sid = ex.session_id as string
-          if (!exercisesBySession[sid]) exercisesBySession[sid] = []
-          exercisesBySession[sid]!.push(ex)
-        }
       }
+      type SessionRow = {
+        id: string
+        label: string
+        sort_order: number
+        estimated_minutes: number | null
+        notes: string | null
+        workout_exercises: ExerciseRow[] | null
+      }
+      const { workout_sessions, ...program } = data as typeof data & { workout_sessions: SessionRow[] | null }
+      const sessionRows = [...(workout_sessions ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+      const exercisesBySession: Record<string, ExerciseRow[]> = {}
+      for (const sess of sessionRows) {
+        exercisesBySession[sess.id] = [...(sess.workout_exercises ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+      }
+      const sessions = sessionRows.map(({ workout_exercises: _ex, ...rest }) => rest)
 
-      return { program, sessions: sessions ?? [], exercisesBySession }
+      return { program, sessions, exercisesBySession }
     },
   })
 

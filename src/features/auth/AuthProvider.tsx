@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { isSupabaseConfigured } from '@/lib/env'
 import { getSupabase } from '@/lib/supabase/client'
 import { clearTemporaryFlag, temporarySessionExpired } from '@/lib/auth/remember'
+import { clearPersistedCache } from '@/lib/queryCache'
 import type { MemberRole, Tables } from '@/types/database'
 
 export type AuthMembership = Tables<'organization_members'> & {
@@ -41,6 +42,36 @@ type AuthContextValue = {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+const CTX_KEY = 'rn-auth-context'
+type CachedContext = { userId: string; profile: Tables<'profiles'> | null; memberships: AuthMembership[]; studentLinks: StudentLink[] }
+
+function readCachedContext(userId: string): Omit<CachedContext, 'userId'> | null {
+  try {
+    const raw = localStorage.getItem(CTX_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as CachedContext
+    return parsed.userId === userId ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function writeCachedContext(userId: string, data: Omit<CachedContext, 'userId'>) {
+  try {
+    localStorage.setItem(CTX_KEY, JSON.stringify({ userId, ...data }))
+  } catch {
+    /* armazenamento indisponível */
+  }
+}
+
+function clearCachedContext() {
+  try {
+    localStorage.removeItem(CTX_KEY)
+  } catch {
+    /* armazenamento indisponível */
+  }
+}
 
 async function loadContext(userId: string) {
   const sb = getSupabase()
@@ -79,10 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStudentLinks([])
       return
     }
+    // Abre na hora com o que já sabíamos deste usuário; atualiza em segundo plano
+    const cached = readCachedContext(nextSession.user.id)
+    if (cached) {
+      setProfile(cached.profile)
+      setMemberships(cached.memberships)
+      setStudentLinks(cached.studentLinks)
+      setLoading(false)
+    }
     const data = await loadContext(nextSession.user.id)
     setProfile(data.profile)
     setMemberships(data.memberships)
     setStudentLinks(data.studentLinks)
+    writeCachedContext(nextSession.user.id, data)
   }, [])
 
   useEffect(() => {
@@ -103,7 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
     })
 
-    const { data: sub } = sb.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = sb.auth.onAuthStateChange((event, next) => {
+      // INITIAL_SESSION já foi tratado acima; renovação de token não muda o vínculo
+      if (event === 'INITIAL_SESSION') return
+      if (event === 'TOKEN_REFRESHED') {
+        setSession(next)
+        return
+      }
       hydrate(next).finally(() => {
         if (mounted) setLoading(false)
       })
@@ -127,6 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const sb = getSupabase()
     if (sb) await sb.auth.signOut()
     queryClient.clear()
+    clearPersistedCache()
+    clearCachedContext()
     setSession(null)
     setProfile(null)
     setMemberships([])

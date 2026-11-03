@@ -1,5 +1,7 @@
 import { Home, Dumbbell, UserRound, CreditCard } from 'lucide-react'
+import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { prefetchStudentRoutes } from '@/lib/prefetchRoutes'
 import { cn } from '@/lib/utils'
 
 const tabs = [
@@ -10,6 +12,7 @@ const tabs = [
 ]
 
 export function StudentLayout() {
+  useEffect(() => prefetchStudentRoutes(), [])
   return (
     <div className="mx-auto min-h-dvh max-w-lg bg-background">
       <main className="pb-nav px-4 pt-[calc(1rem+var(--safe-top))]">

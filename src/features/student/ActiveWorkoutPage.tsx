@@ -12,7 +12,7 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { isOnline, OFFLINE_SAVE_MESSAGE } from '@/lib/offline'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn, createClientRequestId } from '@/lib/utils'
-import type { Json, TrainingLogStatus } from '@/types/database'
+import type { Json, Tables, TrainingLogStatus } from '@/types/database'
 import { Check, ChevronLeft, ChevronRight, Timer } from 'lucide-react'
 import { ExercisePhoto } from '@/features/student/ExerciseImage'
 
@@ -63,33 +63,25 @@ export function ActiveWorkoutPage() {
   const [setDrafts, setSetDrafts] = useState<Record<string, SetDraft[]>>({})
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 500)
-    return () => clearInterval(t)
-  }, [])
 
   const logQuery = useQuery({
     queryKey: ['student', 'training-log', logId],
     enabled: Boolean(logId && activeStudent?.id),
     queryFn: async () => {
       const sb = requireSupabase()
-      const { data: log, error } = await sb
+      const { data, error } = await sb
         .from('training_logs')
-        .select('*')
+        .select('*, training_set_logs(*)')
         .eq('id', logId!)
         .eq('student_id', activeStudent!.id)
         .maybeSingle()
       if (error) throw error
-      if (!log) return null
+      if (!data) return null
 
-      const { data: sets, error: sErr } = await sb
-        .from('training_set_logs')
-        .select('*')
-        .eq('training_log_id', log.id)
-        .order('set_number')
-      if (sErr) throw sErr
-
-      return { log, sets: sets ?? [] }
+      const { training_set_logs: sets, ...log } = data as typeof data & {
+        training_set_logs: Tables<'training_set_logs'>[] | null
+      }
+      return { log, sets: [...(sets ?? [])].sort((a, b) => a.set_number - b.set_number) }
     },
   })
 
@@ -134,6 +126,18 @@ export function ActiveWorkoutPage() {
     ? new Date(logQuery.data.log.rest_ends_at).getTime()
     : null
   const restRemaining = restEndsAt ? restEndsAt - now : 0
+
+  // O relógio só roda durante o descanso (antes redesenhava a tela toda a cada 0,5s)
+  useEffect(() => {
+    if (!restEndsAt || restEndsAt <= Date.now()) return
+    setNow(Date.now())
+    const t = window.setInterval(() => {
+      const current = Date.now()
+      setNow(current)
+      if (current >= restEndsAt) window.clearInterval(t)
+    }, 250)
+    return () => window.clearInterval(t)
+  }, [restEndsAt])
   const isResting = restRemaining > 0
 
   const saveSet = useMutation({

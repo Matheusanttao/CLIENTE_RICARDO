@@ -9,10 +9,11 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { Button } from '@/components/ui/button'
+import { prefetchPersonalRoutes } from '@/lib/prefetchRoutes'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -26,6 +27,7 @@ const links = [
 ]
 
 export function PersonalLayout() {
+  useEffect(() => prefetchPersonalRoutes(), [])
   const [open, setOpen] = useState(false)
 
   const Nav = (
