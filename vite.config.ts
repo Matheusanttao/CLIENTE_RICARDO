@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -47,10 +48,36 @@ function seo(appUrl: string): Plugin {
   }
 }
 
+/** Versão do build: data/hora (Brasília) + commit. A Vercel informa o commit em VERCEL_GIT_COMMIT_SHA. */
+function buildVersion(): string {
+  const when = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date())
+    .replace(',', '')
+  let sha = process.env.VERCEL_GIT_COMMIT_SHA ?? ''
+  if (!sha) {
+    try {
+      sha = execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+    } catch {
+      sha = ''
+    }
+  }
+  return sha ? `${when} · ${sha.slice(0, 7)}` : when
+}
+
 export default defineConfig(({ mode }) => {
   const appUrl = (loadEnv(mode, process.cwd(), 'VITE_').VITE_APP_URL ?? '').trim().replace(/\/$/, '')
 
   return {
+    define: {
+      __APP_VERSION__: JSON.stringify(buildVersion()),
+    },
     plugins: [
       react(),
       tailwindcss(),

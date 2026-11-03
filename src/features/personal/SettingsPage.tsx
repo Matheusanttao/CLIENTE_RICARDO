@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useTheme } from '@/lib/theme'
 import { requireSupabase } from '@/lib/supabase/client'
+import { APP_VERSION } from '@/lib/version'
 import { useState } from 'react'
 
 export function SettingsPage() {
@@ -139,6 +140,7 @@ export function SettingsPage() {
       >
         Sair
       </Button>
+      <p className="text-center text-xs text-muted-foreground">Versão {APP_VERSION}</p>
     </div>
   )
 }

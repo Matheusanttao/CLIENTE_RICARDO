@@ -13,6 +13,7 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { BRAND } from '@/lib/constants'
 import { isOnline, OFFLINE_SAVE_MESSAGE } from '@/lib/offline'
 import { requireSupabase } from '@/lib/supabase/client'
+import { APP_VERSION } from '@/lib/version'
 import { useTheme } from '@/lib/theme'
 
 const schema = z.object({
@@ -149,7 +150,9 @@ export function ProfilePage() {
 
       <Card>
         <CardContent className="flex flex-col gap-2 py-4">
-          <p className="text-xs text-muted-foreground">{BRAND.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {BRAND.name} · Versão {APP_VERSION}
+          </p>
           <Button variant="destructive" onClick={() => auth.signOut()}>
             <LogOut className="mr-2 h-4 w-4" />
             Sair

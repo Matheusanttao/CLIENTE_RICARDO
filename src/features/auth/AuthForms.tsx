@@ -14,6 +14,7 @@ import { getAppUrl, isSupabaseConfigured } from '@/lib/env'
 import { sanitizeReturnTo } from '@/lib/auth/redirect'
 import { requireSupabase } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/constants'
+import { APP_VERSION } from '@/lib/version'
 import { loginIdentifierToEmail } from '@/lib/auth/username'
 
 const loginSchema = z.object({
@@ -238,8 +239,9 @@ function AuthShell({
         <CardContent>{children}</CardContent>
       </Card>
       <Link to="/" className="text-center text-sm text-muted-foreground underline">
-        Voltar ao site
+        Voltar ao início
       </Link>
+      <p className="text-center text-xs text-muted-foreground/70">Versão {APP_VERSION}</p>
     </div>
   )
 }
