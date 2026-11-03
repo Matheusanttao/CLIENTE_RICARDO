@@ -14,6 +14,7 @@ import { isOnline, OFFLINE_SAVE_MESSAGE } from '@/lib/offline'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn, createClientRequestId } from '@/lib/utils'
 import type { Json, TrainingLogStatus } from '@/types/database'
+import { ExercisePhoto } from '@/features/student/ExerciseImage'
 
 type SnapshotExercise = {
   workout_exercise_id: string
@@ -24,6 +25,7 @@ type SnapshotExercise = {
   load_unit: string | null
   rest_seconds: number | null
   notes: string | null
+  image_path?: string | null
 }
 
 type SetDraft = {
@@ -338,6 +340,7 @@ export function ActiveWorkoutPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
+              <ExercisePhoto path={currentEx.image_path} name={currentEx.exercise_name} />
               {(setDrafts[currentEx.workout_exercise_id] ?? []).map((draft) => (
                 <div key={draft.setNumber} className="rounded-lg border border-border p-3 space-y-2">
                   <div className="flex items-center justify-between">

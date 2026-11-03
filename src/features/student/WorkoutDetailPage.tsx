@@ -11,6 +11,7 @@ import { isOnline, OFFLINE_SAVE_MESSAGE } from '@/lib/offline'
 import { requireSupabase } from '@/lib/supabase/client'
 import { createClientRequestId } from '@/lib/utils'
 import type { Json } from '@/types/database'
+import { ExerciseThumb } from '@/features/student/ExerciseImage'
 
 type SnapshotExercise = {
   workout_exercise_id: string
@@ -21,6 +22,7 @@ type SnapshotExercise = {
   load_unit: string | null
   rest_seconds: number | null
   notes: string | null
+  image_path?: string | null
 }
 
 export function WorkoutDetailPage() {
@@ -64,13 +66,14 @@ export function WorkoutDetailPage() {
         load_unit: string | null
         rest_seconds: number | null
         sort_order: number
+        exercise_image_path: string | null
       }>> = {}
 
       if (sessionIds.length > 0) {
         const { data: exercises, error: eErr } = await sb
           .from('workout_exercises')
           .select(
-            'id, session_id, exercise_name, sets, reps, suggested_load, load_unit, rest_seconds, sort_order, notes',
+            'id, session_id, exercise_name, sets, reps, suggested_load, load_unit, rest_seconds, sort_order, notes, exercise_image_path',
           )
           .in('session_id', sessionIds)
           .order('sort_order')
@@ -103,6 +106,7 @@ export function WorkoutDetailPage() {
         load_unit: ex.load_unit,
         rest_seconds: ex.rest_seconds,
         notes: null,
+        image_path: ex.exercise_image_path,
       }))
 
       const clientRequestId = createClientRequestId()
@@ -199,8 +203,11 @@ export function WorkoutDetailPage() {
                     <li className="text-muted-foreground">Nenhum exercício nesta sessão.</li>
                   ) : (
                     exercises.map((ex) => (
-                      <li key={ex.id} className="flex justify-between gap-2 border-b border-border/60 pb-2 last:border-0">
-                        <span>{ex.exercise_name}</span>
+                      <li key={ex.id} className="flex items-center justify-between gap-2 border-b border-border/60 pb-2 last:border-0">
+                        <span className="flex items-center gap-3">
+                          <ExerciseThumb path={ex.exercise_image_path} name={ex.exercise_name} />
+                          {ex.exercise_name}
+                        </span>
                         <span className="shrink-0 text-muted-foreground">
                           {ex.sets ?? '—'}×{ex.reps ?? '—'}
                           {ex.suggested_load != null ? ` · ${ex.suggested_load}${ex.load_unit ?? 'kg'}` : ''}

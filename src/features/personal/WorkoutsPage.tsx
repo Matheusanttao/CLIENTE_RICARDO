@@ -72,7 +72,7 @@ export function WorkoutsPage() {
       const sb = requireSupabase()
       const { data, error } = await sb
         .from('exercises')
-        .select('id, name, instructions, video_url')
+        .select('id, name, instructions, video_url, image_path')
         .eq('organization_id', orgId!)
         .eq('is_active', true)
         .order('name')
@@ -173,6 +173,7 @@ export function WorkoutsPage() {
             exercise_name: ex.exercise_name as string,
             exercise_instructions: ex.exercise_instructions as string | null,
             exercise_video_url: ex.exercise_video_url as string | null,
+            exercise_image_path: ex.exercise_image_path as string | null,
             sets: ex.sets as number | null,
             reps: ex.reps as string | null,
             suggested_load: ex.suggested_load as number | null,
@@ -205,6 +206,7 @@ export function WorkoutsPage() {
         exercise_name: ex.name,
         exercise_instructions: ex.instructions,
         exercise_video_url: ex.video_url,
+        exercise_image_path: ex.image_path,
         sets: Number(exerciseForm.sets) || null,
         reps: exerciseForm.reps || null,
         suggested_load: exerciseForm.suggested_load ? Number(exerciseForm.suggested_load) : null,
@@ -298,6 +300,7 @@ export function WorkoutsPage() {
               exercise_name: ex.exercise_name as string,
               exercise_instructions: ex.exercise_instructions as string | null,
               exercise_video_url: ex.exercise_video_url as string | null,
+              exercise_image_path: ex.exercise_image_path as string | null,
               sets: ex.sets as number | null,
               reps: ex.reps as string | null,
               suggested_load: ex.suggested_load as number | null,

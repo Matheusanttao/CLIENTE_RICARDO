@@ -560,6 +560,7 @@ export interface Database {
           notes: string | null
           video_url: string | null
           video_storage_path: string | null
+          image_path: string | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -576,6 +577,7 @@ export interface Database {
           notes?: string | null
           video_url?: string | null
           video_storage_path?: string | null
+          image_path?: string | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -592,6 +594,7 @@ export interface Database {
           notes?: string | null
           video_url?: string | null
           video_storage_path?: string | null
+          image_path?: string | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -749,6 +752,7 @@ export interface Database {
           exercise_name: string
           exercise_instructions: string | null
           exercise_video_url: string | null
+          exercise_image_path: string | null
           sets: number | null
           reps: string | null
           suggested_load: number | null
@@ -772,6 +776,7 @@ export interface Database {
           exercise_name: string
           exercise_instructions?: string | null
           exercise_video_url?: string | null
+          exercise_image_path?: string | null
           sets?: number | null
           reps?: string | null
           suggested_load?: number | null
@@ -795,6 +800,7 @@ export interface Database {
           exercise_name?: string
           exercise_instructions?: string | null
           exercise_video_url?: string | null
+          exercise_image_path?: string | null
           sets?: number | null
           reps?: string | null
           suggested_load?: number | null
