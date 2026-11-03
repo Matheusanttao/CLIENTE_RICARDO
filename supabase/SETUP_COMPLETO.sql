@@ -1151,3 +1151,33 @@ $$;
 
 revoke all on function public.approve_access_request(uuid) from public;
 grant execute on function public.approve_access_request(uuid) to authenticated;
+
+
+-- ============================================================
+-- PASSO 2 — TORNAR O RICARDO ADMINISTRADOR
+-- Rode SÓ ESTE BLOCO depois de criar a conta dele em
+-- Authentication > Users > Add user (marque "Auto Confirm User").
+-- Troque o e-mail abaixo. Se o usuário ainda não existir, só avisa.
+-- ============================================================
+do $$
+declare
+  v_email text := 'EMAIL_DO_RICARDO@gmail.com';  -- << TROQUE AQUI
+  v_uid uuid;
+begin
+  select id into v_uid from auth.users where lower(email) = lower(v_email);
+  if v_uid is null then
+    raise notice 'Usuário % ainda não existe. Crie em Authentication > Users e rode este bloco de novo.', v_email;
+    return;
+  end if;
+
+  insert into public.organization_members (organization_id, user_id, role, status)
+  values ('a0000000-0000-4000-8000-000000000001', v_uid, 'owner', 'active')
+  on conflict (organization_id, user_id)
+  do update set role = 'owner', status = 'active';
+
+  update public.profiles
+  set full_name = coalesce(nullif(full_name, v_email), 'Ricardo Neves')
+  where id = v_uid;
+
+  raise notice 'Pronto: % agora é administrador (owner).', v_email;
+end $$;
