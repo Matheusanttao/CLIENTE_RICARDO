@@ -365,8 +365,8 @@ export function ActiveWorkoutPage() {
               <ExercisePhoto path={currentEx.image_path} name={currentEx.exercise_name} />
               <div className="grid grid-cols-[2rem_1fr_1fr_2.75rem] items-center gap-2 px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 <span>Série</span>
-                <span>Reps</span>
-                <span>Carga (kg)</span>
+                <span className="text-center">Reps</span>
+                <span className="text-center">Carga (kg)</span>
                 <span className="sr-only">Feito</span>
               </div>
               <div className="space-y-2">
@@ -390,7 +390,7 @@ export function ActiveWorkoutPage() {
                       <Input
                         aria-label={`Repetições da série ${draft.setNumber}`}
                         inputMode="numeric"
-                        className="h-10 text-center"
+                        className="h-10 text-center placeholder:text-muted-foreground/40"
                         placeholder={draft.prescribed_reps ?? '—'}
                         value={draft.actual_reps}
                         onChange={(e) => update('actual_reps', e.target.value)}
@@ -398,7 +398,7 @@ export function ActiveWorkoutPage() {
                       <Input
                         aria-label={`Carga da série ${draft.setNumber}`}
                         inputMode="decimal"
-                        className="h-10 text-center"
+                        className="h-10 text-center placeholder:text-muted-foreground/40"
                         placeholder={draft.prescribed_load != null ? String(draft.prescribed_load) : '—'}
                         value={draft.actual_load}
                         onChange={(e) => update('actual_load', e.target.value)}

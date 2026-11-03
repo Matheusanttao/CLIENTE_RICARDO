@@ -140,9 +140,7 @@ export function HomePage() {
   return (
     <div className="space-y-5">
       <header className="pt-2">
-        <p className="text-sm capitalize text-muted-foreground">
-          {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
-        </p>
+        <p className="text-sm text-muted-foreground">{capitalizeFirst(format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR }))}</p>
         <h1 className="font-display text-2xl font-semibold">Olá, {greetingName}</h1>
       </header>
 
@@ -229,4 +227,8 @@ function QuickLink({ to, icon, label }: { to: string; icon: React.ReactNode; lab
       {label}
     </Link>
   )
+}
+
+function capitalizeFirst(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
