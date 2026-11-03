@@ -3,11 +3,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
-import { BrandMark } from '@/components/brand/BrandMark'
+import { ChevronLeft, Eye, EyeOff, Lock, UserRound } from 'lucide-react'
+import logoMark from '@/assets/logo-mark.png'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { ConfigMissing } from '@/components/shared/ConfigMissing'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { getAppUrl, isSupabaseConfigured } from '@/lib/env'
@@ -16,6 +17,7 @@ import { requireSupabase } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/constants'
 import { APP_VERSION } from '@/lib/version'
 import { loginIdentifierToEmail } from '@/lib/auth/username'
+import { getRememberedUser, hasRememberChoice, saveRememberChoice } from '@/lib/auth/remember'
 
 const loginSchema = z.object({
   identifier: z.string().trim().min(3, 'Informe seu usuário'),
@@ -30,7 +32,12 @@ export function LoginPage({ area }: { area: 'aluno' | 'personal' }) {
   const location = useLocation()
   const [params] = useSearchParams()
   const [error, setError] = useState<string | null>(null)
-  const form = useForm<LoginValues>({ resolver: zodResolver(loginSchema) })
+  const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(() => hasRememberChoice(area))
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { identifier: getRememberedUser(area), password: '' },
+  })
 
   if (!isSupabaseConfigured) return <ConfigMissing />
 
@@ -54,6 +61,7 @@ export function LoginPage({ area }: { area: 'aluno' | 'personal' }) {
         setError(signError.message === 'Invalid login credentials' ? 'Usuário ou senha incorretos.' : signError.message)
         return
       }
+      saveRememberChoice(area, remember, values.identifier)
       await auth.refreshProfile()
       const fallback = area === 'personal' ? '/personal/dashboard' : '/aluno/inicio'
       const fromState = (location.state as { from?: string } | null)?.from
@@ -64,37 +72,70 @@ export function LoginPage({ area }: { area: 'aluno' | 'personal' }) {
     }
   })
 
+  const isPersonal = area === 'personal'
+
   return (
     <AuthShell
-      title={area === 'personal' ? 'Área do personal' : 'Área do aluno'}
-      description={area === 'personal' ? 'Entre com seu e-mail ou usuário e senha.' : 'Entre com o usuário e a senha que seu personal enviou.'}
+      title={isPersonal ? 'Painel do personal' : 'Área do aluno'}
+      description={isPersonal ? 'Entre para gerenciar alunos e treinos.' : 'Entre com o usuário e a senha que o Ricardo te enviou.'}
     >
-      <form className="space-y-4" onSubmit={onSubmit} noValidate>
-        <Field label={area === 'personal' ? 'E-mail ou usuário' : 'Usuário'} error={form.formState.errors.identifier?.message}>
-          <Input
-            type="text"
-            autoComplete="username"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            {...form.register('identifier')}
-          />
+      <form className="space-y-4" onSubmit={onSubmit} noValidate autoComplete="on">
+        <Field label={isPersonal ? 'E-mail ou usuário' : 'Usuário'} error={form.formState.errors.identifier?.message}>
+          <div className="relative">
+            <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder={isPersonal ? 'seu@email.com' : 'ex.: maria.silva'}
+              className="h-12 rounded-xl pl-10"
+              {...form.register('identifier')}
+            />
+          </div>
         </Field>
         <Field label="Senha" error={form.formState.errors.password?.message}>
-          <Input type="password" autoComplete="current-password" {...form.register('password')} />
+          <div className="relative">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="••••••"
+              className="h-12 rounded-xl pl-10 pr-12"
+              {...form.register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+            </button>
+          </div>
         </Field>
-        {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-        <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>
+
+        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3">
+          <span>
+            <span className="block text-sm font-medium">Lembrar meu acesso</span>
+            <span className="block text-xs text-muted-foreground">Continuar conectado neste celular</span>
+          </span>
+          <Switch checked={remember} onCheckedChange={setRemember} aria-label="Lembrar meu acesso" />
+        </label>
+
+        {error && (
+          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        <Button className="h-12 w-full rounded-xl text-base" type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? 'Entrando…' : 'Entrar'}
         </Button>
       </form>
-      <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-        {area === 'aluno' ? (
-          <p>Ainda não tem acesso ou esqueceu a senha? Fale com o seu personal.</p>
-        ) : (
-          <p>Esqueceu a senha? Redefina pelo painel do Supabase (Authentication → Users).</p>
-        )}
-      </div>
+      <p className="mt-5 text-center text-sm text-muted-foreground">
+        {isPersonal ? 'Esqueceu a senha? Fale com o suporte.' : 'Não tem acesso ou esqueceu a senha? Fale com o Ricardo.'}
+      </p>
     </AuthShell>
   )
 }
@@ -226,22 +267,31 @@ function AuthShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-4">
-      <div className="space-y-2 text-center">
-        <BrandMark className="justify-center" size="lg" />
-        <p className="text-sm text-muted-foreground">{BRAND.slogan}</p>
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"
+        aria-hidden
+      />
+      <div className="relative mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-[calc(1.5rem+var(--safe-bottom))] pt-[calc(1rem+var(--safe-top))]">
+        <Link to="/" className="-ml-2 flex w-fit items-center gap-1 rounded-lg px-2 py-2 text-sm text-muted-foreground">
+          <ChevronLeft className="h-4 w-4" aria-hidden />
+          Voltar
+        </Link>
+
+        <div className="mt-6 flex flex-col items-center text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--graphite)] p-3 shadow-xl shadow-primary/10 ring-1 ring-white/5">
+            <img src={logoMark} alt="" className="h-full w-full object-contain" />
+          </div>
+          <h1 className="mt-5 font-display text-2xl font-semibold">{title}</h1>
+          <p className="mt-1 max-w-xs text-sm text-muted-foreground">{description}</p>
+        </div>
+
+        <div className="mt-8">{children}</div>
+
+        <p className="mt-auto pt-8 text-center text-[11px] text-muted-foreground/60">
+          {BRAND.name} · Versão {APP_VERSION}
+        </p>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-      <Link to="/" className="text-center text-sm text-muted-foreground underline">
-        Voltar ao início
-      </Link>
-      <p className="text-center text-xs text-muted-foreground/70">Versão {APP_VERSION}</p>
     </div>
   )
 }

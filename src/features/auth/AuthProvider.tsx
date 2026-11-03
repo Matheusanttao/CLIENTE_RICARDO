@@ -11,6 +11,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { isSupabaseConfigured } from '@/lib/env'
 import { getSupabase } from '@/lib/supabase/client'
+import { clearTemporaryFlag, temporarySessionExpired } from '@/lib/auth/remember'
 import type { MemberRole, Tables } from '@/types/database'
 
 export type AuthMembership = Tables<'organization_members'> & {
@@ -92,7 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let mounted = true
-    sb.auth.getSession().then(({ data }) => {
+    const start = temporarySessionExpired()
+      ? sb.auth.signOut({ scope: 'local' }).then(() => clearTemporaryFlag())
+      : Promise.resolve()
+    start.then(() => sb.auth.getSession()).then(({ data }) => {
       if (!mounted) return
       hydrate(data.session).finally(() => {
         if (mounted) setLoading(false)
