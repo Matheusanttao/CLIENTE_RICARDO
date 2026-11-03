@@ -351,7 +351,7 @@ export function WorkoutsPage() {
       {(programs.data?.length || 0) === 0 ? (
         <EmptyState title="Nenhum programa" actionLabel="Criar" onAction={() => setCreateOpen(true)} />
       ) : (
-        <ul className="space-y-2">
+        <ul className="grid gap-2 lg:grid-cols-2">
           {programs.data!.map((p) => (
             <li key={p.id}>
               <Card>
@@ -366,7 +366,7 @@ export function WorkoutsPage() {
                     </p>
                   </button>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" variant={selectedProgramId === p.id ? 'default' : 'outline'} onClick={() => setSelectedProgramId(p.id)}>
+                    <Button size="sm" className="flex-1 sm:flex-none sm:px-6" variant={selectedProgramId === p.id ? 'default' : 'outline'} onClick={() => setSelectedProgramId(p.id)}>
                       {selectedProgramId === p.id ? 'Editando' : 'Editar'}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => duplicateProgram.mutate(p.id)} aria-label="Duplicar">

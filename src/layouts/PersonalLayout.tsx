@@ -39,8 +39,8 @@ export function PersonalLayout() {
           onClick={() => setOpen(false)}
           className={({ isActive }) =>
             cn(
-              'flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
-              isActive && 'bg-accent text-accent-foreground',
+              'flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+              isActive && 'bg-primary/15 text-primary hover:bg-primary/15 hover:text-primary',
             )
           }
         >
@@ -53,7 +53,7 @@ export function PersonalLayout() {
 
   return (
     <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="hidden border-r border-border bg-card lg:block">
+      <aside className="hidden border-r border-border bg-card/40 lg:block">
         <div className="sticky top-0">
           <div className="border-b border-border p-4">
             <Link to="/personal/dashboard">
@@ -72,7 +72,7 @@ export function PersonalLayout() {
           </Button>
         </header>
         {open && <div className="border-b border-border bg-card lg:hidden">{Nav}</div>}
-        <main className="mx-auto max-w-6xl p-4 pb-safe sm:p-6">
+        <main className="mx-auto w-full max-w-5xl p-4 pb-safe sm:p-6 lg:px-10 lg:py-10">
           <Outlet />
         </main>
       </div>

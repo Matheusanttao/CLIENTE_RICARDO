@@ -160,7 +160,7 @@ export function ExercisesPage() {
       {filtered.length === 0 ? (
         <EmptyState title="Nenhum exercício" actionLabel="Criar" onAction={() => openDialog(null, emptyForm)} />
       ) : (
-        <ul className="space-y-2">
+        <ul className="grid gap-2 lg:grid-cols-2">
           {filtered.map((e) => (
             <li key={e.id}>
               <button

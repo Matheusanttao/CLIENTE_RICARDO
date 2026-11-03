@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { z } from 'zod'
 import { ChevronLeft, Eye, EyeOff, Lock, UserRound } from 'lucide-react'
 import logoMark from '@/assets/logo-mark.png'
+import ricardo from '@/assets/ricardo.webp'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -267,12 +268,29 @@ function AuthShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-background">
+    <div className="relative min-h-dvh overflow-hidden bg-background lg:grid lg:grid-cols-[1.1fr_1fr]">
+      {/* computador: foto e chamada, igual à tela de boas-vindas */}
+      <aside className="relative hidden overflow-hidden lg:block">
+        <img src={ricardo} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-top opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#0e1210]/30 to-[#0e1210]" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1210] via-[#0e1210]/20 to-transparent" aria-hidden />
+        <div className="absolute bottom-0 left-0 p-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Personal Trainer</p>
+          <p className="mt-3 font-display text-5xl font-bold leading-tight text-white">
+            Seu treino.
+            <br />
+            Sua evolução.
+            <br />
+            <span className="text-primary">Seu resultado.</span>
+          </p>
+        </div>
+      </aside>
+
       <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"
+        className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl lg:left-3/4"
         aria-hidden
       />
-      <div className="relative mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-[calc(1.5rem+var(--safe-bottom))] pt-[calc(1rem+var(--safe-top))]">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-[calc(1.5rem+var(--safe-bottom))] pt-[calc(1rem+var(--safe-top))] lg:justify-center lg:py-12">
         <Link to="/" className="-ml-2 flex w-fit items-center gap-1 rounded-lg px-2 py-2 text-sm text-muted-foreground">
           <ChevronLeft className="h-4 w-4" aria-hidden />
           Voltar
@@ -288,7 +306,7 @@ function AuthShell({
 
         <div className="mt-8">{children}</div>
 
-        <p className="mt-auto pt-8 text-center text-[11px] text-muted-foreground/60">
+        <p className="mt-auto pt-8 text-center text-[11px] text-muted-foreground/60 lg:mt-10">
           {BRAND.name} · Versão {APP_VERSION}
         </p>
       </div>

@@ -184,7 +184,7 @@ export function StudentsPage() {
           onAction={openNew}
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="grid gap-2 lg:grid-cols-2">
           {filtered.map((s) => (
             <li key={s.id}>
               <Link to={`/personal/alunos/${s.id}`} className="block">

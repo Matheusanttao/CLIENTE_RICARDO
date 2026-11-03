@@ -179,7 +179,8 @@ export function WorkoutDetailPage() {
       {sessions.length === 0 ? (
         <EmptyState title="Sem sessões" description="Este programa ainda não tem sessões configuradas." />
       ) : (
-        sessions.map((session) => {
+        <div className="grid gap-4 md:grid-cols-2">
+          {sessions.map((session) => {
           const exercises = exercisesBySession[session.id] ?? []
           const isPreselected = preselectedSession === session.id
           return (
@@ -221,7 +222,8 @@ export function WorkoutDetailPage() {
               </CardContent>
             </Card>
           )
-        })
+        })}
+        </div>
       )}
     </div>
   )

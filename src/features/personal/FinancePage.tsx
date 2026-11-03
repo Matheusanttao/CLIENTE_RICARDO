@@ -177,7 +177,7 @@ export function FinancePage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Financeiro" description="Mensalidades e pagamentos dos alunos." />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
         <Button onClick={() => setChargeOpen(true)}>Nova cobrança</Button>
         <Button variant="outline" onClick={() => setPlanOpen(true)}>
           Novo plano
