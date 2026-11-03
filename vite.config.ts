@@ -84,6 +84,7 @@ export default defineConfig(({ mode }) => {
       seo(appUrl),
       VitePWA({
         registerType: 'autoUpdate',
+        injectRegister: false,
         includeAssets: ['favicon.svg', 'icons/*.png'],
         manifest: {
           name: 'Ricardo Neves Personal',
@@ -118,6 +119,9 @@ export default defineConfig(({ mode }) => {
           // Cache apenas estáticos públicos — nunca respostas privadas da API
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
           navigateFallback: '/index.html',
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
           runtimeCaching: [],
         },
         devOptions: {

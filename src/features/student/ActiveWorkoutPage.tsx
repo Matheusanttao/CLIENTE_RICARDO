@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/features/auth/AuthProvider'
@@ -14,6 +13,7 @@ import { isOnline, OFFLINE_SAVE_MESSAGE } from '@/lib/offline'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn, createClientRequestId } from '@/lib/utils'
 import type { Json, TrainingLogStatus } from '@/types/database'
+import { Check, ChevronLeft, ChevronRight, Timer } from 'lucide-react'
 import { ExercisePhoto } from '@/features/student/ExerciseImage'
 
 type SnapshotExercise = {
@@ -262,25 +262,32 @@ export function ActiveWorkoutPage() {
   return (
     <div className="space-y-4 pb-8">
       <div className="flex items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/aluno/inicio">← Início</Link>
-        </Button>
-        <Badge variant="secondary">Em andamento</Badge>
+        <Link to="/aluno/inicio" className="flex items-center gap-1 text-sm text-muted-foreground">
+          <ChevronLeft className="h-4 w-4" aria-hidden />
+          Início
+        </Link>
+        <Badge variant="success">Em andamento</Badge>
       </div>
 
-      <div>
-        <h1 className="font-display text-xl font-semibold">Treino ativo</h1>
-        <Progress value={progressPct} className="mt-2 h-2" />
-        <p className="mt-1 text-xs text-muted-foreground">
-          {completedSets} de {totalSets} séries registradas
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-end justify-between">
+          <h1 className="font-display text-xl font-semibold">Treino em andamento</h1>
+          <span className="font-display text-sm font-semibold text-primary">{Math.round(progressPct)}%</span>
+        </div>
+        <Progress value={progressPct} className="mt-3 h-2" />
+        <p className="mt-2 text-xs text-muted-foreground">
+          {completedSets} de {totalSets} séries feitas
         </p>
       </div>
 
       {isResting && (
-        <Card className="border-primary/40 bg-primary/5">
+        <Card className="sticky top-2 z-30 border-primary/50 bg-card/95 shadow-lg backdrop-blur">
           <CardContent className="py-4 text-center">
-            <p className="text-sm text-muted-foreground">Descanso</p>
-            <p className="font-display text-3xl font-semibold tabular-nums">{formatRestMs(restRemaining)}</p>
+            <p className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+              <Timer className="h-4 w-4 text-primary" aria-hidden />
+              Descanso
+            </p>
+            <p className="font-display text-4xl font-semibold tabular-nums text-primary">{formatRestMs(restRemaining)}</p>
             <Button
               variant="outline"
               size="sm"
@@ -311,108 +318,135 @@ export function ActiveWorkoutPage() {
         <EmptyState title="Prescrição vazia" description="Não há exercícios neste treino." />
       ) : (
         <>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {prescription.map((ex, idx) => (
-              <button
-                key={ex.workout_exercise_id}
-                type="button"
-                onClick={() => setActiveExerciseIdx(idx)}
-                className={cn(
-                  'shrink-0 rounded-full border px-3 py-1 text-xs font-medium',
-                  idx === activeExerciseIdx ? 'border-primary bg-primary/10' : 'border-border',
-                )}
-              >
-                {idx + 1}. {ex.exercise_name}
-              </button>
-            ))}
+          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+            {prescription.map((ex, idx) => {
+              const drafts = setDrafts[ex.workout_exercise_id] ?? []
+              const done = drafts.length > 0 && drafts.every((d) => d.completed)
+              return (
+                <button
+                  key={ex.workout_exercise_id}
+                  type="button"
+                  onClick={() => setActiveExerciseIdx(idx)}
+                  className={cn(
+                    'flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-xs font-semibold',
+                    idx === activeExerciseIdx
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : done
+                        ? 'border-primary/40 bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground',
+                  )}
+                >
+                  {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : <span>{idx + 1}</span>}
+                  {ex.exercise_name}
+                </button>
+              )
+            })}
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Exercício {activeExerciseIdx + 1}/{totalEx}: {currentEx.exercise_name}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Prescrito: {currentEx.sets ?? '—'}×{currentEx.reps ?? '—'}
-                {currentEx.suggested_load != null
-                  ? ` · ${currentEx.suggested_load}${currentEx.load_unit ?? 'kg'}`
-                  : ''}
+            <CardHeader className="pb-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Exercício {activeExerciseIdx + 1} de {totalEx}
               </p>
+              <CardTitle className="text-lg">{currentEx.exercise_name}</CardTitle>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Badge variant="secondary">
+                  {currentEx.sets ?? '—'} × {currentEx.reps ?? '—'}
+                </Badge>
+                {currentEx.suggested_load != null && (
+                  <Badge variant="secondary">
+                    {currentEx.suggested_load} {currentEx.load_unit ?? 'kg'}
+                  </Badge>
+                )}
+                {currentEx.rest_seconds ? <Badge variant="secondary">Descanso {currentEx.rest_seconds}s</Badge> : null}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <ExercisePhoto path={currentEx.image_path} name={currentEx.exercise_name} />
-              {(setDrafts[currentEx.workout_exercise_id] ?? []).map((draft) => (
-                <div key={draft.setNumber} className="rounded-lg border border-border p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Série {draft.setNumber}</span>
-                    {draft.completed && <Badge>Preenchida</Badge>}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Alvo: {draft.prescribed_reps ?? '—'} reps
-                    {draft.prescribed_load != null
-                      ? ` · ${draft.prescribed_load}${draft.prescribed_load_unit ?? 'kg'}`
-                      : ''}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label htmlFor={`reps-${draft.setNumber}`}>Reps (real)</Label>
+              <div className="grid grid-cols-[2rem_1fr_1fr_2.75rem] items-center gap-2 px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span>Série</span>
+                <span>Reps</span>
+                <span>Carga (kg)</span>
+                <span className="sr-only">Feito</span>
+              </div>
+              <div className="space-y-2">
+                {(setDrafts[currentEx.workout_exercise_id] ?? []).map((draft) => {
+                  const update = (field: 'actual_reps' | 'actual_load', val: string) =>
+                    setSetDrafts((prev) => ({
+                      ...prev,
+                      [currentEx.workout_exercise_id]: prev[currentEx.workout_exercise_id]!.map((r) =>
+                        r.setNumber === draft.setNumber ? { ...r, [field]: val } : r,
+                      ),
+                    }))
+                  return (
+                    <div
+                      key={draft.setNumber}
+                      className={cn(
+                        'grid grid-cols-[2rem_1fr_1fr_2.75rem] items-center gap-2 rounded-xl border p-1.5 pl-2 transition-colors',
+                        draft.completed ? 'border-primary/40 bg-primary/10' : 'border-border',
+                      )}
+                    >
+                      <span className="font-display text-sm font-semibold">{draft.setNumber}</span>
                       <Input
-                        id={`reps-${draft.setNumber}`}
+                        aria-label={`Repetições da série ${draft.setNumber}`}
                         inputMode="numeric"
+                        className="h-10 text-center"
+                        placeholder={draft.prescribed_reps ?? '—'}
                         value={draft.actual_reps}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setSetDrafts((prev) => ({
-                            ...prev,
-                            [currentEx.workout_exercise_id]: prev[currentEx.workout_exercise_id]!.map((r) =>
-                              r.setNumber === draft.setNumber ? { ...r, actual_reps: val } : r,
-                            ),
-                          }))
-                        }}
+                        onChange={(e) => update('actual_reps', e.target.value)}
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor={`load-${draft.setNumber}`}>Carga (real)</Label>
                       <Input
-                        id={`load-${draft.setNumber}`}
+                        aria-label={`Carga da série ${draft.setNumber}`}
                         inputMode="decimal"
+                        className="h-10 text-center"
+                        placeholder={draft.prescribed_load != null ? String(draft.prescribed_load) : '—'}
                         value={draft.actual_load}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setSetDrafts((prev) => ({
-                            ...prev,
-                            [currentEx.workout_exercise_id]: prev[currentEx.workout_exercise_id]!.map((r) =>
-                              r.setNumber === draft.setNumber ? { ...r, actual_load: val } : r,
-                            ),
-                          }))
-                        }}
+                        onChange={(e) => update('actual_load', e.target.value)}
                       />
+                      <button
+                        type="button"
+                        aria-label={draft.completed ? `Série ${draft.setNumber} feita` : `Marcar série ${draft.setNumber} como feita`}
+                        disabled={saveSet.isPending || isResting || draft.completed}
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-lg transition-colors disabled:opacity-100',
+                          draft.completed
+                            ? 'bg-primary text-primary-foreground'
+                            : 'border border-border bg-muted text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-50',
+                        )}
+                        onClick={() =>
+                          saveSet.mutate(
+                            {
+                              exercise: currentEx,
+                              draft: {
+                                ...draft,
+                                actual_reps: draft.actual_reps || (draft.prescribed_reps ?? ''),
+                                actual_load:
+                                  draft.actual_load || (draft.prescribed_load != null ? String(draft.prescribed_load) : ''),
+                              },
+                              markComplete: true,
+                            },
+                            {
+                              onSuccess: (id) => {
+                                setSetDrafts((prev) => ({
+                                  ...prev,
+                                  [currentEx.workout_exercise_id]: prev[currentEx.workout_exercise_id]!.map((r) =>
+                                    r.setNumber === draft.setNumber ? { ...r, completed: true, logId: id } : r,
+                                  ),
+                                }))
+                              },
+                            },
+                          )
+                        }
+                      >
+                        <Check className="h-5 w-5" aria-hidden />
+                      </button>
                     </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    disabled={saveSet.isPending || isResting}
-                    onClick={() =>
-                      saveSet.mutate(
-                        { exercise: currentEx, draft, markComplete: true },
-                        {
-                          onSuccess: (id) => {
-                            setSetDrafts((prev) => ({
-                              ...prev,
-                              [currentEx.workout_exercise_id]: prev[currentEx.workout_exercise_id]!.map((r) =>
-                                r.setNumber === draft.setNumber ? { ...r, completed: true, logId: id } : r,
-                              ),
-                            }))
-                          },
-                        },
-                      )
-                    }
-                  >
-                    {saveSet.isPending ? 'Salvando…' : 'Registrar série'}
-                  </Button>
-                </div>
-              ))}
+                  )
+                })}
+              </div>
+              <p className="text-center text-xs text-muted-foreground">
+                Deixe em branco para usar o que o personal passou. Toque em ✓ ao terminar a série.
+              </p>
             </CardContent>
           </Card>
 
@@ -423,6 +457,7 @@ export function ActiveWorkoutPage() {
               disabled={activeExerciseIdx <= 0}
               onClick={() => setActiveExerciseIdx((i) => Math.max(0, i - 1))}
             >
+              <ChevronLeft className="h-4 w-4" aria-hidden />
               Anterior
             </Button>
             <Button
@@ -432,6 +467,7 @@ export function ActiveWorkoutPage() {
               onClick={() => setActiveExerciseIdx((i) => Math.min(totalEx - 1, i + 1))}
             >
               Próximo
+              <ChevronRight className="h-4 w-4" aria-hidden />
             </Button>
           </div>
         </>
@@ -445,11 +481,11 @@ export function ActiveWorkoutPage() {
           {finishWorkout.isPending ? 'Finalizando…' : 'Concluir treino'}
         </Button>
         <Button
-          variant="secondary"
+          variant="ghost"
           onClick={() => finishWorkout.mutate('partial')}
           disabled={finishWorkout.isPending}
         >
-          Encerrar parcialmente
+          Encerrar sem terminar tudo
         </Button>
       </div>
     </div>

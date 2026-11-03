@@ -12,7 +12,7 @@ const tabs = [
 export function StudentLayout() {
   return (
     <div className="mx-auto min-h-dvh max-w-lg bg-background">
-      <main className="pb-nav px-4 pt-4">
+      <main className="pb-nav px-4 pt-[calc(1rem+var(--safe-top))]">
         <Outlet />
       </main>
       <nav
@@ -26,14 +26,21 @@ export function StudentLayout() {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    'flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground',
+                    'flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors',
                     isActive && 'text-foreground',
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={cn('h-5 w-5', isActive && 'text-primary')} aria-hidden />
+                    <span
+                      className={cn(
+                        'flex h-7 w-12 items-center justify-center rounded-full transition-colors',
+                        isActive && 'bg-primary/15',
+                      )}
+                    >
+                      <Icon className={cn('h-5 w-5', isActive && 'text-primary')} aria-hidden />
+                    </span>
                     {label}
                   </>
                 )}
