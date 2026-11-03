@@ -12,6 +12,8 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { calcFatFreeMass, calcFatMass, calcIMC } from '@/lib/assessment'
 import { GOALS, WEEKDAYS } from '@/lib/constants'
 import { requireSupabase } from '@/lib/supabase/client'
+import { formatDateBR } from '@/lib/utils'
+import { ANAMNESIS_STATUS_LABEL, ANAMNESIS_STATUS_TONE, STUDENT_STATUS_LABEL, STUDENT_STATUS_TONE } from '@/features/shared/statusLabels'
 import { StudentAccessCard } from '@/features/personal/StudentAccess'
 
 export function StudentDetailPage() {
@@ -170,7 +172,7 @@ export function StudentDetailPage() {
         <div>
           <h1 className="font-display text-2xl font-semibold">{s.full_name}</h1>
           <div className="mt-1 flex gap-2">
-            <Badge>{s.status}</Badge>
+            <Badge variant={STUDENT_STATUS_TONE[s.status]}>{STUDENT_STATUS_LABEL[s.status]}</Badge>
             {s.primary_goal && <Badge variant="outline">{s.primary_goal}</Badge>}
           </div>
         </div>
@@ -186,11 +188,20 @@ export function StudentDetailPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
         {(['dados', 'anamnese', 'avaliacoes'] as const).map((t) => (
-          <Button key={t} variant={tab === t ? 'default' : 'outline'} onClick={() => setTab(t)}>
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={
+              tab === t
+                ? 'h-10 rounded-md bg-card text-sm font-semibold shadow-sm'
+                : 'h-10 rounded-md text-sm font-medium text-muted-foreground'
+            }
+          >
             {t === 'dados' ? 'Dados' : t === 'anamnese' ? 'Anamnese' : 'Avaliações'}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -261,7 +272,7 @@ export function StudentDetailPage() {
             <Card key={a.id}>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base">Versão {a.form_version}</CardTitle>
-                <Badge>{a.status}</Badge>
+                <Badge variant={ANAMNESIS_STATUS_TONE[a.status]}>{ANAMNESIS_STATUS_LABEL[a.status]}</Badge>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
@@ -343,7 +354,7 @@ export function StudentDetailPage() {
             return (
               <Card key={a.id}>
                 <CardContent className="space-y-1 p-4 text-sm">
-                  <p className="font-medium">{new Date(a.assessed_at).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{formatDateBR(a.assessed_at)}</p>
                   <p>Peso: {a.weight_kg ?? '—'} kg · Altura: {a.height_cm ?? '—'} cm</p>
                   <p>IMC: {imc.ok ? imc.value : '—'}</p>
                   <p>

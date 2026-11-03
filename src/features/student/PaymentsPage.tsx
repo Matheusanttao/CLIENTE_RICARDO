@@ -9,6 +9,7 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { CHARGE_STATUS_LABEL } from '@/features/shared/statusLabels'
 import { formatBRL } from '@/lib/money'
 import { requireSupabase } from '@/lib/supabase/client'
+import { parseDateOnly } from '@/lib/utils'
 import type { ChargeStatus } from '@/types/database'
 
 function chargeVariant(status: ChargeStatus): 'default' | 'secondary' | 'danger' | 'outline' {
@@ -85,7 +86,7 @@ export function PaymentsPage() {
                 <CardContent className="text-sm">
                   <p className="font-medium">{formatBRL(c.amount_cents)}</p>
                   <p className="text-muted-foreground">
-                    Vencimento: {format(new Date(c.due_date), 'd/MM/yyyy', { locale: ptBR })}
+                    Vencimento: {format(parseDateOnly(c.due_date), 'd/MM/yyyy', { locale: ptBR })}
                   </p>
                   {c.paid_at && (
                     <p className="text-muted-foreground">

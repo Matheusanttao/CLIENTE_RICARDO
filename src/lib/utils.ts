@@ -16,3 +16,14 @@ export function createClientRequestId(): string {
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
+
+/** "2026-11-07" → Date local (evita mostrar um dia antes por causa do fuso UTC). */
+export function parseDateOnly(value: string): Date {
+  const [y, m, d] = value.slice(0, 10).split('-').map(Number)
+  return new Date(y!, (m ?? 1) - 1, d ?? 1)
+}
+
+export function formatDateBR(value: string | null | undefined): string {
+  if (!value) return '—'
+  return parseDateOnly(value).toLocaleDateString('pt-BR')
+}

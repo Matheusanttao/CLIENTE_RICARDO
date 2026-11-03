@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Camera, ImageOff, Trash2 } from 'lucide-react'
+import { Camera, ChevronRight, ImageOff, Plus, Trash2 } from 'lucide-react'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -129,31 +129,31 @@ export function ExercisesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Exercícios</h1>
-          <p className="text-sm text-muted-foreground">Biblioteca da organização. Sem vídeos externos inventados.</p>
-        </div>
-        <Button
-          onClick={() => openDialog(null, emptyForm)}
-        >
-          Novo exercício
-        </Button>
-      </div>
+      <PageHeader
+        title="Exercícios"
+        description="Sua biblioteca para montar os treinos."
+        actions={
+          <Button onClick={() => openDialog(null, emptyForm)}>
+            <Plus className="h-4 w-4" aria-hidden />
+            Novo
+          </Button>
+        }
+      />
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>
-          Todos
-        </Button>
-        {MUSCLE_GROUPS.map((g) => (
-          <Button
+      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        {[{ value: 'all', label: 'Todos' }, ...MUSCLE_GROUPS].map((g) => (
+          <button
             key={g.value}
-            size="sm"
-            variant={filter === g.value ? 'default' : 'outline'}
+            type="button"
             onClick={() => setFilter(g.value)}
+            className={
+              filter === g.value
+                ? 'h-9 shrink-0 whitespace-nowrap rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground'
+                : 'h-9 shrink-0 whitespace-nowrap rounded-full border border-border bg-card px-4 text-sm font-medium text-muted-foreground'
+            }
           >
             {g.label}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -163,53 +163,49 @@ export function ExercisesPage() {
         <ul className="space-y-2">
           {filtered.map((e) => (
             <li key={e.id}>
-              <Card>
-                <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="block w-full text-left"
+                onClick={() =>
+                  openDialog(e.id, {
+                    name: e.name,
+                    muscle_group: e.muscle_group,
+                    equipment: e.equipment || '',
+                    level: e.level || '',
+                    instructions: e.instructions || '',
+                    common_mistakes: e.common_mistakes || '',
+                    notes: e.notes || '',
+                    video_url: e.video_url || '',
+                    image_path: e.image_path,
+                  })
+                }
+              >
+                <Card className="transition-colors hover:border-primary/40">
+                  <CardContent className="flex items-center gap-3 p-3">
                     {e.image_path ? (
                       <img
                         src={exerciseImageUrl(e.image_path) ?? undefined}
                         alt=""
                         loading="lazy"
-                        className="h-14 w-14 shrink-0 rounded-md object-cover"
+                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                         <ImageOff className="h-5 w-5" aria-hidden />
                       </div>
                     )}
-                    <div>
-                    <p className="font-medium">{e.name}</p>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      <Badge variant="secondary">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{e.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
                         {MUSCLE_GROUPS.find((m) => m.value === e.muscle_group)?.label}
-                      </Badge>
-                      {e.equipment && <Badge variant="outline">{e.equipment}</Badge>}
-                      {!e.image_path && <Badge variant="outline">Sem foto</Badge>}
+                        {e.equipment ? ` · ${e.equipment}` : ''}
+                        {!e.image_path ? ' · sem foto' : ''}
+                      </p>
                     </div>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      openDialog(e.id, {
-                        name: e.name,
-                        muscle_group: e.muscle_group,
-                        equipment: e.equipment || '',
-                        level: e.level || '',
-                        instructions: e.instructions || '',
-                        common_mistakes: e.common_mistakes || '',
-                        notes: e.notes || '',
-                        video_url: e.video_url || '',
-                        image_path: e.image_path,
-                      })
-                    }
-                  >
-                    Editar
-                  </Button>
-                </CardContent>
-              </Card>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  </CardContent>
+                </Card>
+              </button>
             </li>
           ))}
         </ul>

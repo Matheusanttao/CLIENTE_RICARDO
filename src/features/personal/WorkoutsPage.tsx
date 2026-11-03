@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { Copy, Plus, Trash2 } from 'lucide-react'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { PROGRAM_STATUS_LABEL, PROGRAM_STATUS_TONE } from '@/features/shared/statusLabels'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function WorkoutsPage() {
@@ -222,6 +225,18 @@ export function WorkoutsPage() {
     onError: (e: Error) => toast.error(e.message),
   })
 
+  const removeExercise = useMutation({
+    mutationFn: async (workoutExerciseId: string) => {
+      const { error } = await requireSupabase().from('workout_exercises').delete().eq('id', workoutExerciseId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toast.success('Exercício removido')
+      qc.invalidateQueries({ queryKey: ['personal', 'program-detail', selectedProgramId] })
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
   const publish = useMutation({
     mutationFn: async () => {
       const sb = requireSupabase()
@@ -322,15 +337,16 @@ export function WorkoutsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Treinos</h1>
-          <p className="text-sm text-muted-foreground">
-            Rascunho → revisão → publicação. Histórico de execução preserva snapshot.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>Novo programa</Button>
-      </div>
+      <PageHeader
+        title="Treinos"
+        description="Monte o programa, confira e publique para o aluno."
+        actions={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" aria-hidden />
+            Novo
+          </Button>
+        }
+      />
 
       {(programs.data?.length || 0) === 0 ? (
         <EmptyState title="Nenhum programa" actionLabel="Criar" onAction={() => setCreateOpen(true)} />
@@ -339,20 +355,25 @@ export function WorkoutsPage() {
           {programs.data!.map((p) => (
             <li key={p.id}>
               <Card>
-                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <button type="button" className="text-left" onClick={() => setSelectedProgramId(p.id)}>
-                    <p className="font-medium">{p.title}</p>
+                <CardContent className="space-y-3 p-4">
+                  <button type="button" className="block w-full text-left" onClick={() => setSelectedProgramId(p.id)}>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium">{p.title}</p>
+                      <Badge variant={PROGRAM_STATUS_TONE[p.status]}>{PROGRAM_STATUS_LABEL[p.status]}</Badge>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      {(p.students as { full_name?: string } | null)?.full_name} · v{p.version}
+                      {(p.students as { full_name?: string } | null)?.full_name} · versão {p.version}
                     </p>
-                    <Badge className="mt-1">{p.status}</Badge>
                   </button>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => duplicateProgram.mutate(p.id)}>
-                      Duplicar
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1" variant={selectedProgramId === p.id ? 'default' : 'outline'} onClick={() => setSelectedProgramId(p.id)}>
+                      {selectedProgramId === p.id ? 'Editando' : 'Editar'}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => duplicateProgram.mutate(p.id)} aria-label="Duplicar">
+                      <Copy className="h-4 w-4" aria-hidden />
                     </Button>
                     {p.status !== 'archived' && (
-                      <Button size="sm" variant="secondary" onClick={() => archive.mutate(p.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => archive.mutate(p.id)}>
                         Arquivar
                       </Button>
                     )}
@@ -366,53 +387,109 @@ export function WorkoutsPage() {
 
       {selectedProgramId && (
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-base">Montagem do programa</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+            <CardTitle className="text-base">Montar treino</CardTitle>
             <Button size="sm" onClick={() => publish.mutate()}>
-              Publicar
+              Publicar para o aluno
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <Input className="max-w-[120px]" value={sessionLabel} onChange={(e) => setSessionLabel(e.target.value)} />
-              <Button variant="outline" onClick={() => addSession.mutate()}>
-                Adicionar sessão
+            <div className="flex gap-2">
+              <Input
+                className="w-24"
+                aria-label="Nome do treino (ex.: A, B, C)"
+                placeholder="A"
+                value={sessionLabel}
+                onChange={(e) => setSessionLabel(e.target.value)}
+              />
+              <Button variant="outline" className="flex-1" onClick={() => addSession.mutate()}>
+                <Plus className="h-4 w-4" aria-hidden />
+                Adicionar treino {sessionLabel || ''}
               </Button>
             </div>
 
             {(detail.data || []).map((session) => (
-              <div key={session.id} className="rounded-md border border-border p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold">Sessão {session.label}</h3>
+              <div key={session.id} className="rounded-lg border border-border">
+                <div className="flex items-center justify-between border-b border-border px-3 py-2">
+                  <h3 className="font-display font-semibold">Treino {session.label}</h3>
                   <Button size="sm" variant="ghost" onClick={() => duplicateSession.mutate(session.id)}>
-                    Duplicar sessão
+                    <Copy className="h-4 w-4" aria-hidden />
+                    Duplicar
                   </Button>
                 </div>
-                <ul className="mb-3 space-y-1 text-sm">
-                  {((session.workout_exercises as Array<{ id: string; exercise_name: string; sets: number | null; reps: string | null }>) || []).map(
-                    (ex) => (
-                      <li key={ex.id}>
-                        {ex.exercise_name} — {ex.sets}×{ex.reps}
-                      </li>
-                    ),
-                  )}
+                <ul className="divide-y divide-border text-sm">
+                  {(
+                    (session.workout_exercises as Array<{
+                      id: string
+                      exercise_name: string
+                      sets: number | null
+                      reps: string | null
+                      suggested_load: number | null
+                      rest_seconds: number | null
+                    }>) || []
+                  ).map((ex, idx) => (
+                    <li key={ex.id} className="flex items-center gap-3 px-3 py-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{ex.exercise_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ex.sets ?? '—'} × {ex.reps ?? '—'}
+                          {ex.suggested_load != null ? ` · ${ex.suggested_load} kg` : ''}
+                          {ex.rest_seconds ? ` · descanso ${ex.rest_seconds}s` : ''}
+                        </p>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Remover ${ex.exercise_name}`}
+                        onClick={() => removeExercise.mutate(ex.id)}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </li>
+                  ))}
                 </ul>
-                <div className="grid gap-2 sm:grid-cols-5">
+                <div className="space-y-2 border-t border-border bg-muted/30 p-3">
                   <select
-                    className="h-11 rounded-md border border-border bg-card px-2 sm:col-span-2"
+                    className="h-11 w-full rounded-md border border-border bg-card px-3"
                     value={exerciseForm.exercise_id}
                     onChange={(e) => setExerciseForm((f) => ({ ...f, exercise_id: e.target.value }))}
                   >
-                    <option value="">Exercício</option>
+                    <option value="">+ Escolher exercício</option>
                     {(exercises.data || []).map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.name}
                       </option>
                     ))}
                   </select>
-                  <Input placeholder="Séries" value={exerciseForm.sets} onChange={(e) => setExerciseForm((f) => ({ ...f, sets: e.target.value }))} />
-                  <Input placeholder="Reps" value={exerciseForm.reps} onChange={(e) => setExerciseForm((f) => ({ ...f, reps: e.target.value }))} />
-                  <Button onClick={() => addExercise.mutate(session.id)}>Add</Button>
+                  <div className="grid grid-cols-4 gap-2">
+                    <MiniField label="Séries">
+                      <Input inputMode="numeric" value={exerciseForm.sets} onChange={(e) => setExerciseForm((f) => ({ ...f, sets: e.target.value }))} />
+                    </MiniField>
+                    <MiniField label="Reps">
+                      <Input value={exerciseForm.reps} onChange={(e) => setExerciseForm((f) => ({ ...f, reps: e.target.value }))} />
+                    </MiniField>
+                    <MiniField label="Carga (kg)">
+                      <Input
+                        inputMode="decimal"
+                        value={exerciseForm.suggested_load}
+                        onChange={(e) => setExerciseForm((f) => ({ ...f, suggested_load: e.target.value }))}
+                      />
+                    </MiniField>
+                    <MiniField label="Descanso (s)">
+                      <Input
+                        inputMode="numeric"
+                        value={exerciseForm.rest_seconds}
+                        onChange={(e) => setExerciseForm((f) => ({ ...f, rest_seconds: e.target.value }))}
+                      />
+                    </MiniField>
+                  </div>
+                  <Button className="w-full" disabled={addExercise.isPending} onClick={() => addExercise.mutate(session.id)}>
+                    <Plus className="h-4 w-4" aria-hidden />
+                    Adicionar ao treino {session.label}
+                  </Button>
                 </div>
               </div>
             ))}
@@ -477,5 +554,14 @@ export function WorkoutsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function MiniField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="space-y-1">
+      <span className="block truncate text-[11px] font-medium text-muted-foreground">{label}</span>
+      {children}
+    </label>
   )
 }

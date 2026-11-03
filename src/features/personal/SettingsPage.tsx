@@ -11,12 +11,15 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { useTheme } from '@/lib/theme'
 import { requireSupabase } from '@/lib/supabase/client'
 import { APP_VERSION } from '@/lib/version'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { ChangePasswordCard } from '@/components/shared/ChangePasswordCard'
+import { ROLE_LABEL } from '@/features/shared/statusLabels'
 import { useState } from 'react'
 
 export function SettingsPage() {
   const { staffMembership, profile, signOut, user, isStudent } = useAuth()
   const orgId = staffMembership?.organization_id
-  const { theme, setTheme, resolved } = useTheme()
+  const { setTheme, resolved } = useTheme()
   const qc = useQueryClient()
 
   const org = useQuery({
@@ -54,23 +57,20 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Organização, preferências e sessão.</p>
-      </div>
+      <PageHeader title="Configurações" description="Seus dados, senha e aparência do app." />
 
       <Card>
         <CardHeader>
           <BrandMark />
-          <CardTitle className="mt-2">Organização</CardTitle>
-          <CardDescription>Primeira organização: Ricardo Neves Personal (seed da migration).</CardDescription>
+          <CardTitle className="mt-2">Sua marca</CardTitle>
+          <CardDescription>Nome e frase que aparecem para os alunos.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2">
             <Label>Nome</Label>
             <Input
               placeholder={org.data?.name}
-              value={name}
+              value={name || org.data?.name || ''}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
@@ -78,24 +78,26 @@ export function SettingsPage() {
             <Label>Slogan</Label>
             <Input
               placeholder={org.data?.slogan || ''}
-              value={slogan}
+              value={slogan || org.data?.slogan || ''}
               onChange={(e) => setSlogan(e.target.value)}
             />
           </div>
-          <Button onClick={() => saveOrg.mutate()}>Salvar organização</Button>
+          <Button onClick={() => saveOrg.mutate()}>Salvar</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Perfil</CardTitle>
+          <CardTitle>Sua conta</CardTitle>
           <CardDescription>{user?.email}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p>Nome: {profile?.full_name || '—'}</p>
-          <p>Papel: {staffMembership?.role}</p>
+        <CardContent className="space-y-1 text-sm">
+          <p>{profile?.full_name || '—'}</p>
+          <p className="text-muted-foreground">{staffMembership ? ROLE_LABEL[staffMembership.role] : ''}</p>
         </CardContent>
       </Card>
+
+      <ChangePasswordCard />
 
       <Card>
         <CardHeader>
@@ -104,7 +106,7 @@ export function SettingsPage() {
         <CardContent className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium">Tema escuro</p>
-            <p className="text-xs text-muted-foreground">Atual: {resolved} (preferência: {theme})</p>
+            <p className="text-xs text-muted-foreground">{resolved === 'dark' ? 'Ligado' : 'Desligado'}</p>
           </div>
           <Switch
             checked={resolved === 'dark'}
@@ -120,15 +122,6 @@ export function SettingsPage() {
         </Button>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Administração</CardTitle>
-          <CardDescription>
-            O primeiro administrador é criado apenas por procedimento documentado em{' '}
-            <code>docs/BOOTSTRAP_ADMIN.md</code>. Não há cadastro público de admin.
-          </CardDescription>
-        </CardHeader>
-      </Card>
 
       <Button
         variant="destructive"

@@ -111,3 +111,24 @@
     padding-bottom: calc(5.5rem + var(--safe-bottom));
   }
 }
+
+/* ---- animações do app ---- */
+@keyframes rn-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rn-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.92); opacity: 0.75; }
+}
+@keyframes rn-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-[rn-"] { animation: none !important; }
+}
+
+/* listas horizontais roláveis (chips) sem barra de rolagem */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

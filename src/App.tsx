@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { RequireAuth } from '@/features/auth/RequireAuth'
-import { LoadingScreen } from '@/components/shared/LoadingScreen'
+import { RouteProgress } from '@/components/shared/LoadingScreen'
 import { ThemeProvider } from '@/lib/theme'
 import { LandingPage } from '@/pages/landing/LandingPage'
 import { AreaGate } from '@/pages/AreaGate'
@@ -61,7 +61,7 @@ export default function App() {
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={<LoadingScreen />}>
+            <Suspense fallback={<RouteProgress />}>
               <Routes>
                 <Route path="/" element={isNativeApp() ? <AppEntryPage /> : <LandingPage />} />
 

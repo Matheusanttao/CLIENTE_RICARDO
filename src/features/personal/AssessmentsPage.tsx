@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { calcIMC } from '@/lib/assessment'
+import { formatDateBR } from '@/lib/utils'
+import { ANAMNESIS_STATUS_LABEL, ANAMNESIS_STATUS_TONE } from '@/features/shared/statusLabels'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function AssessmentsPage() {
@@ -55,7 +57,7 @@ export function AssessmentsPage() {
                   <p className="font-medium">
                     {(a.students as { full_name?: string } | null)?.full_name || 'Aluno'}
                   </p>
-                  <Badge className="mt-1">{a.status}</Badge>
+                  <Badge className="mt-1" variant={ANAMNESIS_STATUS_TONE[a.status]}>{ANAMNESIS_STATUS_LABEL[a.status]}</Badge>
                 </div>
                 <Link className="text-sm underline" to={`/personal/alunos/${a.student_id}`}>
                   Revisar
@@ -87,7 +89,7 @@ export function AssessmentsPage() {
                     {(a.students as { full_name?: string } | null)?.full_name || 'Aluno'}
                   </p>
                   <p>
-                    {new Date(a.assessed_at).toLocaleDateString('pt-BR')} · IMC{' '}
+                    {formatDateBR(a.assessed_at)} · IMC{' '}
                     {imc.ok ? imc.value : '—'}
                   </p>
                   <Link className="underline" to={`/personal/alunos/${a.student_id}`}>

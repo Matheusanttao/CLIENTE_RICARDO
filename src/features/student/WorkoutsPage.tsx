@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { parseDateOnly } from '@/lib/utils'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function WorkoutsPage() {
@@ -83,7 +84,7 @@ export function WorkoutsPage() {
                       <Badge variant="outline">{p.frequency_per_week}x/semana</Badge>
                     )}
                     {p.valid_until && (
-                      <span>Válido até {format(new Date(p.valid_until), 'd/MM/yyyy', { locale: ptBR })}</span>
+                      <span>Válido até {format(parseDateOnly(p.valid_until), 'd/MM/yyyy', { locale: ptBR })}</span>
                     )}
                     {p.published_at && (
                       <span>

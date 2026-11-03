@@ -17,7 +17,7 @@ export function RequireAuth({
   const location = useLocation()
 
   if (!auth.configured) return <ConfigMissing />
-  if (auth.loading) return <LoadingScreen label="Verificando sessão…" />
+  if (auth.loading) return <LoadingScreen />
 
   if (!auth.session) {
     return (

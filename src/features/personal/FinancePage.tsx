@@ -12,6 +12,9 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatBRL, parseBRLToCents } from '@/lib/money'
 import { requireSupabase } from '@/lib/supabase/client'
+import { formatDateBR } from '@/lib/utils'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, PLAN_INTERVAL_LABEL } from '@/features/shared/statusLabels'
 import { createClientRequestId } from '@/lib/utils'
 
 export function FinancePage() {
@@ -166,27 +169,19 @@ export function FinancePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">
-            Controle manual. Recebido = soma de pagamentos do mês. Pendente/vencido pelos status das cobranças.
-            Integração Pix/cartão preparada na camada de gateway — sem botão Pagar falso.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setPlanOpen(true)}>
-            Novo plano
-          </Button>
-          <Button onClick={() => setChargeOpen(true)}>Nova cobrança</Button>
-        </div>
+      <PageHeader title="Financeiro" description="Mensalidades e pagamentos dos alunos." />
+      <div className="grid grid-cols-2 gap-2">
+        <Button onClick={() => setChargeOpen(true)}>Nova cobrança</Button>
+        <Button variant="outline" onClick={() => setPlanOpen(true)}>
+          Novo plano
+        </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric title="Recebido no mês" value={formatBRL(d?.received || 0)} />
         <Metric title="Pendente" value={formatBRL(d?.pending || 0)} />
-        <Metric title="Vencido" value={formatBRL(d?.overdue || 0)} />
-        <Metric title="Próximos vencimentos (14d)" value={String(d?.upcoming.length || 0)} />
+        <Metric title="Atrasado" value={formatBRL(d?.overdue || 0)} />
+        <Metric title="Vencem em 14 dias" value={String(d?.upcoming.length || 0)} />
       </div>
 
       <section className="space-y-2">
@@ -200,10 +195,10 @@ export function FinancePage() {
                 <div>
                   <p className="font-medium">{p.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {formatBRL(p.amount_cents)} · {p.interval}
+                    {formatBRL(p.amount_cents)} · {PLAN_INTERVAL_LABEL[p.interval]}
                   </p>
                 </div>
-                <Badge variant={p.is_active ? 'default' : 'secondary'}>
+                <Badge variant={p.is_active ? 'success' : 'secondary'}>
                   {p.is_active ? 'Ativo' : 'Inativo'}
                 </Badge>
               </CardContent>
@@ -219,21 +214,22 @@ export function FinancePage() {
         ) : (
           d!.charges.map((c) => (
             <Card key={c.id}>
-              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-medium">{c.description}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {(c.students as { full_name?: string } | null)?.full_name} · venc.{' '}
-                    {new Date(c.due_date).toLocaleDateString('pt-BR')}
-                  </p>
-                  <div className="mt-1 flex gap-2">
-                    <Badge>{c.status}</Badge>
-                    <span className="text-sm font-medium">{formatBRL(c.amount_cents)}</span>
+              <CardContent className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{(c.students as { full_name?: string } | null)?.full_name}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {c.description} · vence {formatDateBR(c.due_date)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-display font-semibold">{formatBRL(c.amount_cents)}</p>
+                    <Badge variant={CHARGE_STATUS_TONE[c.status]}>{CHARGE_STATUS_LABEL[c.status]}</Badge>
                   </div>
                 </div>
                 {(c.status === 'pending' || c.status === 'overdue') && (
-                  <Button size="sm" onClick={() => markPaid.mutate(c.id)}>
-                    Registrar pagamento
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => markPaid.mutate(c.id)}>
+                    Marcar como pago
                   </Button>
                 )}
               </CardContent>

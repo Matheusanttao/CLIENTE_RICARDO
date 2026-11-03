@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { calcFatFreeMass, calcFatMass, calcIMC } from '@/lib/assessment'
+import { parseDateOnly } from '@/lib/utils'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function AssessmentsPage() {
@@ -84,7 +85,7 @@ export function AssessmentsPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">
-                      {format(new Date(a.assessed_at), "d 'de' MMMM yyyy", { locale: ptBR })}
+                      {format(parseDateOnly(a.assessed_at), "d 'de' MMMM yyyy", { locale: ptBR })}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

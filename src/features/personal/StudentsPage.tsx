@@ -13,6 +13,9 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { requireSupabase } from '@/lib/supabase/client'
 import { GOALS } from '@/lib/constants'
 import { generatePassword, suggestUsername } from '@/lib/auth/username'
+import { ChevronRight, Plus } from 'lucide-react'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { STUDENT_STATUS_LABEL, STUDENT_STATUS_TONE } from '@/features/shared/statusLabels'
 import {
   createStudentLogin,
   CredentialFields,
@@ -129,13 +132,16 @@ export function StudentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Alunos</h1>
-          <p className="text-sm text-muted-foreground">Cadastre o aluno com usuário e senha e envie pelo WhatsApp.</p>
-        </div>
-        <Button onClick={openNew}>Novo aluno</Button>
-      </div>
+      <PageHeader
+        title="Alunos"
+        description={`${students.data?.length ?? 0} cadastrado(s)`}
+        actions={
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4" aria-hidden />
+            Novo
+          </Button>
+        }
+      />
 
       {(requests.data?.length || 0) > 0 && (
         <Card>
@@ -156,10 +162,10 @@ export function StudentsPage() {
         </Card>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Input placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="flex gap-2">
+        <Input placeholder="Buscar aluno…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select
-          className="h-11 rounded-md border border-border bg-card px-3"
+          className="h-11 w-32 shrink-0 rounded-md border border-border bg-card px-3"
           value={status}
           onChange={(e) => setStatus(e.target.value as typeof status)}
         >
@@ -181,27 +187,26 @@ export function StudentsPage() {
         <ul className="space-y-2">
           {filtered.map((s) => (
             <li key={s.id}>
-              <Card>
-                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <Link to={`/personal/alunos/${s.id}`} className="font-medium hover:underline">
-                      {s.full_name}
-                    </Link>
-                    <p className="text-sm text-muted-foreground">
-                      {s.login_username ? `Usuário: ${s.login_username}` : 'Sem acesso ao app'}
-                    </p>
-                    <div className="mt-1 flex gap-2">
-                      <Badge variant="secondary">{s.status}</Badge>
-                      {s.primary_goal && <Badge variant="outline">{s.primary_goal}</Badge>}
+              <Link to={`/personal/alunos/${s.id}`} className="block">
+                <Card className="transition-colors hover:border-primary/40">
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 font-display text-sm font-semibold text-primary">
+                      {initials(s.full_name)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{s.full_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {s.login_username ? `@${s.login_username}` : 'Sem acesso ao app'}
+                        {s.primary_goal ? ` · ${s.primary_goal}` : ''}
+                      </p>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button asChild size="sm">
-                      <Link to={`/personal/alunos/${s.id}`}>Abrir</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    {s.status !== 'active' && (
+                      <Badge variant={STUDENT_STATUS_TONE[s.status]}>{STUDENT_STATUS_LABEL[s.status]}</Badge>
+                    )}
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  </CardContent>
+                </Card>
+              </Link>
             </li>
           ))}
         </ul>
@@ -271,4 +276,9 @@ export function StudentsPage() {
       <CredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
     </div>
   )
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1]![0] : '')).toUpperCase()
 }
