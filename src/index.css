@@ -44,20 +44,26 @@
 }
 
 .dark {
-  --background: #121614;
-  --foreground: #f2f4f2;
-  --card: #1a1f1c;
-  --card-foreground: #f2f4f2;
-  --muted: #242a26;
-  --muted-foreground: #a3ada6;
-  --border: #2e3530;
+  --background: #0e1210;
+  --foreground: #f4f6f4;
+  --card: #161b18;
+  --card-foreground: #f4f6f4;
+  --muted: #1e2521;
+  --muted-foreground: #9aa59e;
+  --border: #252d28;
   --primary: #a3e635;
   --primary-foreground: #142014;
   --accent: #24301c;
   --accent-foreground: #e8f5d8;
   --destructive: #ef5350;
   --ring: #a3e635;
-  --graphite: #0e1210;
+  --graphite: #0a0d0b;
+}
+
+/* brilho verde suave no topo, como na tela de boas-vindas */
+.dark body {
+  background-image: radial-gradient(120% 60% at 50% -10%, rgba(163, 230, 53, 0.1), transparent 60%);
+  background-attachment: fixed;
 }
 
 @layer base {

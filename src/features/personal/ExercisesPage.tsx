@@ -266,7 +266,7 @@ export function ExercisesPage() {
             </Field>
             <Field label="Grupo muscular">
               <select
-                className="h-11 w-full rounded-md border border-border bg-card px-3"
+                className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                 value={form.muscle_group}
                 onChange={(e) => setForm((f) => ({ ...f, muscle_group: e.target.value as MuscleGroup }))}
               >

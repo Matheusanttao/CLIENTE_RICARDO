@@ -165,7 +165,7 @@ export function StudentsPage() {
       <div className="flex gap-2">
         <Input placeholder="Buscar aluno…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select
-          className="h-11 w-32 shrink-0 rounded-md border border-border bg-card px-3"
+          className="h-12 w-32 shrink-0 rounded-xl border border-border bg-muted/40 px-3.5"
           value={status}
           onChange={(e) => setStatus(e.target.value as typeof status)}
         >
@@ -239,7 +239,7 @@ export function StudentsPage() {
             <div className="space-y-2">
               <Label>Objetivo principal</Label>
               <select
-                className="h-11 w-full rounded-md border border-border bg-card px-3"
+                className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                 value={form.primary_goal}
                 onChange={(e) => setForm((f) => ({ ...f, primary_goal: e.target.value }))}
               >

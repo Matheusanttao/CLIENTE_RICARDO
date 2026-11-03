@@ -224,7 +224,7 @@ export function StudentDetailPage() {
             </Field>
             <Field label="Objetivo principal">
               <select
-                className="h-11 w-full rounded-md border border-border bg-card px-3"
+                className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                 defaultValue={s.primary_goal || ''}
                 onChange={(e) => saveStudent.mutate({ primary_goal: e.target.value })}
               >
@@ -238,7 +238,7 @@ export function StudentDetailPage() {
             </Field>
             <Field label="Nível">
               <select
-                className="h-11 w-full rounded-md border border-border bg-card px-3"
+                className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                 defaultValue={s.level || ''}
                 onChange={(e) =>
                   saveStudent.mutate({

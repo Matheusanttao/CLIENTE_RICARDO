@@ -453,7 +453,7 @@ export function WorkoutsPage() {
                 </ul>
                 <div className="space-y-2 border-t border-border bg-muted/30 p-3">
                   <select
-                    className="h-11 w-full rounded-md border border-border bg-card px-3"
+                    className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                     value={exerciseForm.exercise_id}
                     onChange={(e) => setExerciseForm((f) => ({ ...f, exercise_id: e.target.value }))}
                   >
@@ -506,7 +506,7 @@ export function WorkoutsPage() {
             <div className="space-y-2">
               <Label>Aluno</Label>
               <select
-                className="h-11 w-full rounded-md border border-border bg-card px-3"
+                className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                 value={form.student_id}
                 onChange={(e) => setForm((f) => ({ ...f, student_id: e.target.value }))}
               >

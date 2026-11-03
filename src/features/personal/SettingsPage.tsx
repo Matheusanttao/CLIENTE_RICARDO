@@ -89,7 +89,7 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Sua conta</CardTitle>
-          <CardDescription>{user?.email}</CardDescription>
+          <CardDescription className="break-all">{user?.email}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-1 text-sm">
           <p>{profile?.full_name || '—'}</p>

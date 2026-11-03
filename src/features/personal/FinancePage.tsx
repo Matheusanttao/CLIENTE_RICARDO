@@ -272,7 +272,7 @@ export function FinancePage() {
           <div className="space-y-3">
             <Field label="Aluno">
               <select
-                className="h-11 w-full rounded-md border border-border bg-card px-3"
+                className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
                 value={chargeForm.student_id}
                 onChange={(e) => setChargeForm((f) => ({ ...f, student_id: e.target.value }))}
               >
