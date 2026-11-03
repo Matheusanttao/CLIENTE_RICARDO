@@ -17,6 +17,14 @@ const config: CapacitorConfig = {
     cleartext: false,
     errorPath: 'offline.html',
   },
+  plugins: {
+    // Barras do sistema: conteúdo de ponta a ponta, ícones claros sobre fundo escuro
+    SystemBars: {
+      insetsHandling: 'css',
+      initialViewportFitValueHint: 'cover',
+      style: 'DARK',
+    },
+  },
   android: {
     // Usado pelo site para esconder a home institucional (src/lib/native/isNativeApp.ts)
     appendUserAgent: 'RNPersonalApp',

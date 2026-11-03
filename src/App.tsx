@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { persistOptions, queryClient } from '@/lib/queryCache'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { RequireAuth } from '@/features/auth/RequireAuth'
@@ -45,19 +46,10 @@ const PersonalWorkoutsPage = lazyPage(() => import('@/features/personal/Workouts
 const PersonalFinancePage = lazyPage(() => import('@/features/personal/FinancePage'), 'FinancePage')
 const PersonalSettingsPage = lazyPage(() => import('@/features/personal/SettingsPage'), 'SettingsPage')
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
@@ -118,6 +110,6 @@ export default function App() {
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   )
 }

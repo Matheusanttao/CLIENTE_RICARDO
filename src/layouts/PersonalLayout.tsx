@@ -63,7 +63,7 @@ export function PersonalLayout() {
       </aside>
 
       <div>
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card/95 px-4 pb-3 pt-[calc(0.75rem+var(--safe-top))] backdrop-blur lg:hidden">
           <BrandMark size="sm" />
           <Button variant="ghost" size="icon" onClick={() => setOpen((v) => !v)} aria-label="Menu">
             {open ? <X /> : <Menu />}

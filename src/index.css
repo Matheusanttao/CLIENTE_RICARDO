@@ -38,8 +38,9 @@
   --destructive: #c62828;
   --ring: #8bc34a;
   --graphite: #1a1f1c;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-top: env(safe-area-inset-top, 0px);
+  /* Capacitor injeta --safe-area-inset-*; no navegador vale o env() */
+  --safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
 }
 
 .dark {
@@ -73,7 +74,7 @@
     margin: 0;
     min-height: 100dvh;
     overflow-x: hidden;
-    padding-top: var(--safe-top);
+    /* o espaço da barra de status é tratado em cada tela (var(--safe-top)) */
     /* Home (.app) usa o visual original; áreas /aluno e /personal usam o tema do app */
     background: var(--background);
     color: var(--foreground);

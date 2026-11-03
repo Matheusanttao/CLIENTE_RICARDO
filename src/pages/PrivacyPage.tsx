@@ -16,7 +16,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 /** Política de Privacidade (LGPD — Lei 13.709/2018). */
 export function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-2xl space-y-8 px-4 py-10">
+    <main className="mx-auto max-w-2xl space-y-8 px-4 pb-10 pt-[calc(2.5rem+var(--safe-top))]">
       <header className="space-y-4">
         <Link to="/" aria-label="Voltar">
           <BrandMark />
