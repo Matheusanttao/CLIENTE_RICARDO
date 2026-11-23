@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { calcFatFreeMass, calcFatMass, calcIMC } from './assessment'
+import {
+  calcAgeYears,
+  calcBodyDensityJP7,
+  calcFatFreeMass,
+  calcFatMass,
+  calcIMC,
+  calcJP7Assessment,
+  calcSiriBodyFat,
+  sumSkinfolds7,
+} from './assessment'
 import { remainingSeconds, endsAtFromDuration } from './rest-timer'
 import { sanitizeReturnTo } from './auth/redirect'
 import { parseBRLToCents, formatBRL } from './money'
@@ -25,6 +34,61 @@ describe('composição corporal', () => {
       expect(ffm.ok).toBe(true)
       if (ffm.ok) expect(ffm.value).toBe(64)
     }
+  })
+})
+
+describe('Jackson & Pollock 7 dobras + Siri', () => {
+  const folds = {
+    peitoral: 10,
+    axilar_media: 12,
+    triceps: 14,
+    subescapular: 16,
+    abdominal: 20,
+    supra_iliaca: 15,
+    coxa: 13,
+  }
+
+  it('soma as sete dobras', () => {
+    const r = sumSkinfolds7(folds)
+    expect(r.ok && r.value).toBe(100)
+  })
+
+  it('exige todas as dobras', () => {
+    expect(sumSkinfolds7({ ...folds, coxa: undefined }).ok).toBe(false)
+  })
+
+  it('densidade masculina e feminina', () => {
+    const m = calcBodyDensityJP7(100, 30, 'male')
+    const f = calcBodyDensityJP7(100, 30, 'female')
+    expect(m.ok && m.value).toBeCloseTo(1.06535, 5)
+    expect(f.ok && f.value).toBeCloseTo(1.05178, 5)
+  })
+
+  it('exige sexo e idade', () => {
+    expect(calcBodyDensityJP7(100, 30, null).ok).toBe(false)
+    expect(calcBodyDensityJP7(100, null, 'male').ok).toBe(false)
+  })
+
+  it('Siri', () => {
+    const r = calcSiriBodyFat(1.06535)
+    expect(r.ok && r.value).toBeCloseTo(14.64, 1)
+  })
+
+  it('composição completa', () => {
+    const r = calcJP7Assessment({ weightKg: 80, ageYears: 30, sex: 'male', skinfolds: folds })
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.value.s7).toBe(100)
+      expect(r.value.bodyFatPercent).toBeCloseTo(14.64, 1)
+      expect(r.value.fatMassKg).toBeCloseTo(11.71, 1)
+      expect(r.value.fatMassKg + r.value.fatFreeMassKg).toBeCloseTo(80, 5)
+    }
+  })
+
+  it('idade a partir da data de nascimento', () => {
+    expect(calcAgeYears('1990-06-15', new Date(2026, 5, 14))).toBe(35)
+    expect(calcAgeYears('1990-06-15', new Date(2026, 5, 15))).toBe(36)
+    expect(calcAgeYears(null)).toBeNull()
   })
 })
 

@@ -9,7 +9,18 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { calcFatFreeMass, calcFatMass, calcIMC } from '@/lib/assessment'
+import {
+  calcAgeYears,
+  calcFatFreeMass,
+  calcFatMass,
+  calcIMC,
+  calcJP7Assessment,
+  JP7_PROTOCOL_CODE,
+  JP7_PROTOCOL_LABEL,
+  JP7_SKINFOLDS,
+  type BiologicalSex,
+  type Jp7SkinfoldKey,
+} from '@/lib/assessment'
 import { GOALS, WEEKDAYS } from '@/lib/constants'
 import { requireSupabase } from '@/lib/supabase/client'
 import { formatDateBR } from '@/lib/utils'
@@ -121,36 +132,84 @@ export function StudentDetailPage() {
     body_fat_method: '',
     body_fat_source: '',
     notes: '',
+    sex: '' as BiologicalSex | '',
+    age: '',
+    skinfolds: emptySkinfolds(),
   })
+
+  const studentSex = student.data?.sex
+  const effectiveSex: BiologicalSex | null =
+    assessmentForm.sex || (studentSex === 'male' || studentSex === 'female' ? studentSex : null)
+  const effectiveAge =
+    parseDecimal(assessmentForm.age) ?? calcAgeYears(student.data?.birth_date ?? null)
+  const weightValue = parseDecimal(assessmentForm.weight_kg)
+  const heightValue = parseDecimal(assessmentForm.height_cm)
+  const skinfoldValues = Object.fromEntries(
+    JP7_SKINFOLDS.map(({ key }) => [key, parseDecimal(assessmentForm.skinfolds[key])]),
+  ) as Record<Jp7SkinfoldKey, number | null>
+  const anySkinfold = JP7_SKINFOLDS.some(({ key }) => assessmentForm.skinfolds[key].trim() !== '')
+  const jp7 = anySkinfold
+    ? calcJP7Assessment({
+        weightKg: weightValue,
+        ageYears: effectiveAge,
+        sex: effectiveSex,
+        skinfolds: skinfoldValues,
+      })
+    : null
 
   const createAssessment = useMutation({
     mutationFn: async () => {
-      const weight = Number(assessmentForm.weight_kg)
-      const height = Number(assessmentForm.height_cm)
-      const bf = assessmentForm.body_fat_percent ? Number(assessmentForm.body_fat_percent) : null
-      const fat = bf != null ? calcFatMass(weight, bf) : null
-      const ffm = fat?.ok ? calcFatFreeMass(weight, fat.value) : null
+      if (jp7 && !jp7.ok) throw new Error(jp7.error)
+
+      let bf: number | null
+      let fatMass: number | null
+      let fatFreeMass: number | null
+      if (jp7?.ok) {
+        bf = jp7.value.bodyFatPercent
+        fatMass = jp7.value.fatMassKg
+        fatFreeMass = jp7.value.fatFreeMassKg
+      } else {
+        bf = parseDecimal(assessmentForm.body_fat_percent)
+        const fat = bf != null ? calcFatMass(weightValue, bf) : null
+        const ffm = fat?.ok ? calcFatFreeMass(weightValue, fat.value) : null
+        fatMass = fat?.ok ? fat.value : null
+        fatFreeMass = ffm?.ok ? ffm.value : null
+      }
 
       const sb = requireSupabase()
       const { error } = await sb.from('physical_assessments').insert({
         organization_id: orgId!,
         student_id: id!,
         assessed_by: user?.id,
-        weight_kg: weight || null,
-        height_cm: height || null,
+        weight_kg: weightValue,
+        height_cm: heightValue,
         body_fat_percent: bf,
-        body_fat_method: assessmentForm.body_fat_method || null,
+        body_fat_method: jp7?.ok ? JP7_PROTOCOL_LABEL : assessmentForm.body_fat_method || null,
         body_fat_source: assessmentForm.body_fat_source || null,
-        fat_mass_kg: fat?.ok ? fat.value : null,
-        fat_free_mass_kg: ffm?.ok ? ffm.value : null,
+        fat_mass_kg: fatMass,
+        fat_free_mass_kg: fatFreeMass,
         notes: assessmentForm.notes || null,
         perimetry: {},
-        skinfolds_mm: {},
+        skinfolds_mm: jp7?.ok
+          ? { ...skinfoldValues, soma_7: jp7.value.s7, idade: effectiveAge, sexo: effectiveSex }
+          : {},
+        protocol_code: jp7?.ok ? JP7_PROTOCOL_CODE : null,
+        protocol_result: jp7?.ok ? jp7.value.density : null,
       })
       if (error) throw error
     },
     onSuccess: () => {
       toast.success('Avaliação registrada')
+      setAssessmentForm((f) => ({
+        ...f,
+        weight_kg: '',
+        height_cm: '',
+        body_fat_percent: '',
+        body_fat_method: '',
+        body_fat_source: '',
+        notes: '',
+        skinfolds: emptySkinfolds(),
+      }))
       qc.invalidateQueries({ queryKey: ['personal', 'student-assessments', id] })
     },
     onError: (e: Error) => toast.error(e.message),
@@ -161,10 +220,7 @@ export function StudentDetailPage() {
   }
 
   const s = student.data
-  const imcPreview = calcIMC(
-    Number(assessmentForm.weight_kg) || null,
-    Number(assessmentForm.height_cm) || null,
-  )
+  const imcPreview = calcIMC(weightValue, heightValue)
 
   return (
     <div className="space-y-4">
@@ -315,15 +371,75 @@ export function StudentDetailPage() {
                   onChange={(e) => setAssessmentForm((f) => ({ ...f, height_cm: e.target.value }))}
                 />
               </Field>
+              <Field label="Sexo (protocolo)">
+                <select
+                  className="h-12 w-full rounded-xl border border-border bg-muted/40 px-3.5"
+                  value={effectiveSex ?? ''}
+                  onChange={(e) =>
+                    setAssessmentForm((f) => ({ ...f, sex: e.target.value as BiologicalSex | '' }))
+                  }
+                >
+                  <option value="">—</option>
+                  <option value="male">Masculino</option>
+                  <option value="female">Feminino</option>
+                </select>
+              </Field>
+              <Field label="Idade (anos)">
+                <Input
+                  inputMode="numeric"
+                  placeholder={effectiveAge != null ? String(effectiveAge) : ''}
+                  value={assessmentForm.age}
+                  onChange={(e) => setAssessmentForm((f) => ({ ...f, age: e.target.value }))}
+                />
+              </Field>
+
+              <div className="space-y-3 rounded-xl border border-border p-3 sm:col-span-2">
+                <div>
+                  <p className="text-sm font-semibold">Dobras cutâneas (mm) — {JP7_PROTOCOL_LABEL}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Preencha as 7 dobras para calcular o % de gordura automaticamente.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {JP7_SKINFOLDS.map(({ key, label }) => (
+                    <Field key={key} label={label}>
+                      <Input
+                        inputMode="decimal"
+                        value={assessmentForm.skinfolds[key]}
+                        onChange={(e) =>
+                          setAssessmentForm((f) => ({
+                            ...f,
+                            skinfolds: { ...f.skinfolds, [key]: e.target.value },
+                          }))
+                        }
+                      />
+                    </Field>
+                  ))}
+                </div>
+                {jp7 && !jp7.ok && <p className="text-sm text-destructive">{jp7.error}</p>}
+                {jp7?.ok && (
+                  <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
+                    <Result label="Soma 7 dobras" value={`${formatNum(jp7.value.s7, 1)} mm`} />
+                    <Result label="Densidade" value={formatNum(jp7.value.density, 5)} />
+                    <Result label="% Gordura" value={`${formatNum(jp7.value.bodyFatPercent, 2)}%`} />
+                    <Result label="Massa gorda" value={`${formatNum(jp7.value.fatMassKg, 2)} kg`} />
+                    <Result label="Massa magra" value={`${formatNum(jp7.value.fatFreeMassKg, 2)} kg`} />
+                  </div>
+                )}
+              </div>
+
               <Field label="Gordura (%)">
                 <Input
-                  value={assessmentForm.body_fat_percent}
+                  disabled={Boolean(jp7?.ok)}
+                  placeholder={jp7?.ok ? 'Calculado pelas dobras' : ''}
+                  value={jp7?.ok ? String(jp7.value.bodyFatPercent) : assessmentForm.body_fat_percent}
                   onChange={(e) => setAssessmentForm((f) => ({ ...f, body_fat_percent: e.target.value }))}
                 />
               </Field>
               <Field label="Método do % gordura">
                 <Input
-                  value={assessmentForm.body_fat_method}
+                  disabled={Boolean(jp7?.ok)}
+                  value={jp7?.ok ? JP7_PROTOCOL_LABEL : assessmentForm.body_fat_method}
                   onChange={(e) => setAssessmentForm((f) => ({ ...f, body_fat_method: e.target.value }))}
                 />
               </Field>
@@ -343,7 +459,11 @@ export function StudentDetailPage() {
                   onChange={(e) => setAssessmentForm((f) => ({ ...f, notes: e.target.value }))}
                 />
               </Field>
-              <Button className="sm:col-span-2" onClick={() => createAssessment.mutate()}>
+              <Button
+                className="sm:col-span-2"
+                disabled={createAssessment.isPending}
+                onClick={() => createAssessment.mutate()}
+              >
                 Salvar avaliação
               </Button>
             </CardContent>
@@ -351,6 +471,8 @@ export function StudentDetailPage() {
 
           {(assessments.data || []).map((a) => {
             const imc = calcIMC(a.weight_kg, a.height_cm)
+            const folds = (a.skinfolds_mm ?? {}) as Record<string, number | string | null>
+            const isJp7 = a.protocol_code === JP7_PROTOCOL_CODE
             return (
               <Card key={a.id}>
                 <CardContent className="space-y-1 p-4 text-sm">
@@ -361,6 +483,18 @@ export function StudentDetailPage() {
                     Gordura: {a.body_fat_percent ?? '—'}% · Massa gordura: {a.fat_mass_kg ?? '—'} kg ·
                     Livre de gordura: {a.fat_free_mass_kg ?? '—'} kg
                   </p>
+                  {a.body_fat_method && <p>Método: {a.body_fat_method}</p>}
+                  {isJp7 && (
+                    <>
+                      <p>
+                        Soma 7 dobras: {folds.soma_7 ?? '—'} mm · Densidade: {a.protocol_result ?? '—'}
+                        {folds.idade != null && ` · Idade: ${folds.idade} anos`}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {JP7_SKINFOLDS.map(({ key, label }) => `${label}: ${folds[key] ?? '—'}`).join(' · ')}
+                      </p>
+                    </>
+                  )}
                   <p className="text-muted-foreground">
                     Massa livre de gordura não é tratada como massa muscular.
                   </p>
@@ -370,6 +504,30 @@ export function StudentDetailPage() {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function emptySkinfolds(): Record<Jp7SkinfoldKey, string> {
+  return Object.fromEntries(JP7_SKINFOLDS.map(({ key }) => [key, ''])) as Record<Jp7SkinfoldKey, string>
+}
+
+function parseDecimal(raw: string): number | null {
+  const v = raw.trim().replace(',', '.')
+  if (!v) return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+function formatNum(value: number, digits: number) {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+function Result({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-muted px-3 py-2">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-semibold">{value}</p>
     </div>
   )
 }

@@ -237,6 +237,32 @@ export function WorkoutsPage() {
     onError: (e: Error) => toast.error(e.message),
   })
 
+  const removeSession = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await requireSupabase().from('workout_sessions').delete().eq('id', sessionId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toast.success('Treino excluído')
+      qc.invalidateQueries({ queryKey: ['personal', 'program-detail', selectedProgramId] })
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
+  const removeProgram = useMutation({
+    mutationFn: async (programId: string) => {
+      const { error } = await requireSupabase().from('workout_programs').delete().eq('id', programId)
+      if (error) throw error
+      return programId
+    },
+    onSuccess: (programId) => {
+      toast.success('Programa excluído')
+      if (selectedProgramId === programId) setSelectedProgramId(null)
+      qc.invalidateQueries({ queryKey: ['personal', 'programs'] })
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
   const publish = useMutation({
     mutationFn: async () => {
       const sb = requireSupabase()
@@ -377,6 +403,20 @@ export function WorkoutsPage() {
                         Arquivar
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-auto text-destructive hover:text-destructive"
+                      aria-label={`Excluir ${p.title}`}
+                      disabled={removeProgram.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Excluir o programa "${p.title}" e todos os treinos dele? Essa ação não pode ser desfeita.`)) {
+                          removeProgram.mutate(p.id)
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -412,10 +452,26 @@ export function WorkoutsPage() {
               <div key={session.id} className="rounded-lg border border-border">
                 <div className="flex items-center justify-between border-b border-border px-3 py-2">
                   <h3 className="font-display font-semibold">Treino {session.label}</h3>
-                  <Button size="sm" variant="ghost" onClick={() => duplicateSession.mutate(session.id)}>
-                    <Copy className="h-4 w-4" aria-hidden />
-                    Duplicar
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => duplicateSession.mutate(session.id)}>
+                      <Copy className="h-4 w-4" aria-hidden />
+                      Duplicar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      disabled={removeSession.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Excluir o Treino ${session.label} e todos os exercícios dele?`)) {
+                          removeSession.mutate(session.id)
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                      Excluir
+                    </Button>
+                  </div>
                 </div>
                 <ul className="divide-y divide-border text-sm">
                   {(
